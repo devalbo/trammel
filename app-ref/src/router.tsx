@@ -118,7 +118,7 @@ function CodexRoute() {
     }
 
     const script = document.createElement('script');
-    script.src = `${import.meta.env.BASE_URL}app-codex/trammel-codex.iife.js`;
+    script.src = `${import.meta.env.BASE_URL}app-codex/trammel-codex.iife`;
     script.async = true;
     script.onload = onLoad;
     script.onerror = () => {
