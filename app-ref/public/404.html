@@ -7,10 +7,9 @@
     <script>
       (function () {
         var path = window.location.pathname;
-        var base = path.replace(/\/404\.html$/, '');
-        if (base === '') base = '/';
-        var target = base.replace(/\/$/, '') + '/';
-        window.location.replace(target);
+        var parts = path.split('/').filter(Boolean);
+        var base = parts.length ? '/' + parts[0] + '/' : '/';
+        window.location.replace(base);
       })();
     </script>
   </head>
