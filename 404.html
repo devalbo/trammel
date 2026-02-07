@@ -9,7 +9,9 @@
         var path = window.location.pathname;
         var parts = path.split('/').filter(Boolean);
         var base = parts.length ? '/' + parts[0] + '/' : '/';
-        window.location.replace(base);
+        var rest = '/' + parts.slice(1).join('/');
+        var target = base + '#/' + rest.replace(/^\/+/, '');
+        window.location.replace(target);
       })();
     </script>
   </head>
