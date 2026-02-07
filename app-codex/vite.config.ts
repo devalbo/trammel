@@ -19,12 +19,11 @@ export default defineConfig({
           entry: path.resolve(__dirname, 'src/bundle.tsx'),
           name: 'TrammelCodex',
           formats: ['iife'],
-          fileName: (format) => `trammel-codex.${format}.js`,
+          fileName: () => 'trammel-codex',
         },
       }
     : undefined,
   server: {
     port: 5174,
-    cors: true,
   },
 });
