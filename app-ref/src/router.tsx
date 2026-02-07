@@ -59,119 +59,13 @@ function NotFound() {
     </section>
   );
 }
-function CodexNotWorking({ message }: { message: string }) {
+const LazyCodexRoute = React.lazy(() => import('@app-codex/CodexApp'));
+
+function CodexRouteWrapper() {
   return (
-    <section style={{ padding: 16, border: '1px solid #fecaca', borderRadius: 12 }}>
-      <h2 style={{ marginTop: 0 }}>Codex App Unavailable</h2>
-      <p>The Codex bundle failed to load. Other routes should still work.</p>
-      <pre style={{ whiteSpace: 'pre-wrap', color: '#7f1d1d' }}>{message}</pre>
-    </section>
-  );
-}
-
-function CodexRoute() {
-  const isDev = import.meta.env.DEV;
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const hostOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-
-  React.useEffect(() => {
-    if (isDev) return;
-    let mounted = true;
-    const element = containerRef.current;
-
-    if (!element) return;
-
-    const mountCodex = () => {
-      const api = (window as Window & { TrammelCodex?: { mount: (o: { element: HTMLElement }) => void } })
-        .TrammelCodex;
-      if (!api) {
-        throw new Error('TrammelCodex bundle did not register.');
-      }
-      api.mount({ element });
-    };
-
-    const unmountCodex = () => {
-      const api = (window as Window & { TrammelCodex?: { unmount: (el: HTMLElement) => void } })
-        .TrammelCodex;
-      api?.unmount?.(element);
-    };
-
-    const onLoad = () => {
-      try {
-        if (!mounted) return;
-        mountCodex();
-        setLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-      }
-    };
-
-    if ((window as Window & { TrammelCodex?: unknown }).TrammelCodex) {
-      onLoad();
-      return () => {
-        mounted = false;
-        unmountCodex();
-      };
-    }
-
-    const script = document.createElement('script');
-    script.src = `${import.meta.env.BASE_URL}app-codex/trammel-codex.iife.js`;
-    script.async = true;
-    script.onload = onLoad;
-    script.onerror = () => {
-      setError('Failed to load trammel-codex bundle.');
-      setLoading(false);
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      mounted = false;
-      unmountCodex();
-    };
-  }, []);
-
-  const DevCodex = React.useMemo(
-    () =>
-      React.lazy(async () => {
-        const mod = await import('@app-codex/CodexApp');
-        return { default: mod.default };
-      }),
-    []
-  );
-
-  if (error) return <CodexNotWorking message={error} />;
-
-  return (
-    <div style={{ border: '1px solid #e4e7eb', borderRadius: 12, padding: 16 }}>
-      {isDev ? (
-        <div
-          style={{
-            display: 'inline-block',
-            background: '#e0f2fe',
-            color: '#075985',
-            fontSize: 12,
-            padding: '4px 10px',
-            borderRadius: 999,
-            marginBottom: 12,
-          }}
-        >
-          Dev loader: host {hostOrigin} · source via app-ref
-        </div>
-      ) : null}
-      {isDev ? (
-        <Suspense fallback={<div>Loading Codex…</div>}>
-          <DevCodex />
-        </Suspense>
-      ) : (
-        <>
-          {loading ? <div>Loading Codex…</div> : null}
-          <div ref={containerRef} />
-        </>
-      )}
-    </div>
+    <Suspense fallback={<div>Loading Codex…</div>}>
+      <LazyCodexRoute />
+    </Suspense>
   );
 }
 
@@ -188,7 +82,7 @@ const indexRoute = createRoute({
 const codexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'app-codex',
-  component: CodexRoute,
+  component: CodexRouteWrapper,
 });
 
 const LazyClaudeRoute = React.lazy(() => import('@app-claude/ClaudeRoute'));
