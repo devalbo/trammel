@@ -86,6 +86,10 @@ dist
 app-codex/dist-bundle/
 app-ref/public/app-codex/
 
+# Claude bundle output copied into app-ref public
+app-claude/dist-bundle/
+app-ref/public/app-claude/
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
