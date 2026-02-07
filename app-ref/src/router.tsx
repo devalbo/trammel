@@ -48,6 +48,14 @@ function Home() {
   );
 }
 
+function NotFound() {
+  return (
+    <section>
+      <h2 style={{ marginTop: 0 }}>Page not found</h2>
+      <p>The requested route does not exist.</p>
+    </section>
+  );
+}
 function CodexNotWorking({ message }: { message: string }) {
   return (
     <section style={{ padding: 16, border: '1px solid #fecaca', borderRadius: 12 }}>
@@ -172,6 +180,8 @@ const routeTree = rootRoute.addChildren([indexRoute, codexRoute]);
 export const router = createRouter({
   routeTree,
   basepath: (import.meta.env.BASE_URL ?? '/').replace(/\/$/, ''),
+  defaultNotFoundComponent: NotFound,
+  notFoundMode: 'root',
 });
 
 export function AppRouter() {
