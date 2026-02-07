@@ -2,6 +2,10 @@
 
 If you are a coding agent, look for the `General Coordination` section and your section as defined by your name. Only operate according to the instructions in those sections and make changes within the locations PERMITTED WITHIN THOSE DIRECTORIES!!!! DO NOT MESS THIS UP OR THERE WILL BE CONSEQUENCES.
 
+Each agent should manage their own project/package architecture aside from minally required for static web app hosting. Each agent should feel free to use plans and documents from other agent directories as they see fit and NOT BE constrained by the other agent's plans. Use the other agent's design and documentation as reference material, but feel free to adjust organizational and architectural rationale as long as they are founded, reasonable, and explainable.
+
+Each agent should keep track of their plans and accomplished work in their respective TODOs document. If changes are required to the `app-ref` directory, make suggestions in the TODOs document there and make note of the changes that were performed.
+
 
 ## General Coordination
 
