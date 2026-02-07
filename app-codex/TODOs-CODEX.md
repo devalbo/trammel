@@ -8,10 +8,10 @@
 - trammel app architecture expects three packages: constraints, core, app; app-ref should be the host shell.
 - The app needs two SVG modes (Visual + Source), CodeMirror editor, error panel, TinyBase store, and eval pipeline (per DESIGN).
 
-## Plan For app-ref Build (No Changes Made Yet)
+## Plan For app-ref Build (Completed)
 1. Confirm required app-ref scope and routing model.
 2. Scaffold app-ref as a minimal host shell with Vite + React + TanStack router.
-3. Add top-level routes to mount agent apps (e.g., `/codex/*`, `/claude/*`) without coupling their internal routes.
+3. Add top-level routes to mount agent apps (e.g., `/app-codex`, `/app-claude`) without coupling their internal routes.
 4. Provide shared static hosting utilities (base path config for GH Pages, asset handling).
 5. Add minimal TinyBase setup only if app-ref needs shared persistence; otherwise keep it out and let agent apps own it.
 6. Define build + deploy workflow for app-ref that does not interfere with agent app build outputs.
@@ -21,11 +21,12 @@
 
 ## Recent work
 - Added `app-codex/src/CodexApp.tsx` with hello world UI for the `/codex` route.
+- app-ref now lazy-loads Codex the same way it lazy-loads Claude (Suspense wrapper).
 
-## Replan trigger
-- Once the app-ref technical shim is in place, pause and replan the CODEX-optimal path forward.
+## Replan status
+- app-ref shim is in place. Proceeding with Codex-first implementation.
 
-## Replan (Post app-ref Shim)
+## Codex Implementation Plan (from DESIGN.md)
 Goal: deliver a working Codex trammel app quickly, then expand to full spec.
 1. Scaffold `app-codex` as the primary Vite + React app (single-package first).
 2. Implement a minimal editor + SVG viewport loop (hardcoded TSX -> React render).
@@ -37,3 +38,10 @@ Goal: deliver a working Codex trammel app quickly, then expand to full spec.
 8. Add replicad integration only after the basic eval pipeline is stable.
 9. Implement variable extraction + simple control panel.
 10. Validate export/import of `.svg` and `.tsx`.
+
+## Next Up (Concrete Tasks)
+1. Codex editor shell: textarea + Ctrl/Cmd+Enter to run (no CodeMirror yet).
+2. Eval pipeline: Sucrase TSX -> JS, `new Function` with React + vars in scope.
+3. SVG viewport with Visual + Source tabs, XMLSerializer for source view.
+4. Error panel wired to capture syntax/eval errors without crashing the app.
+5. TinyBase `files` store with localStorage persister (single file).
