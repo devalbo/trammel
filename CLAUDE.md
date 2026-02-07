@@ -30,3 +30,7 @@ There is no build system, package.json, or test suite yet. The repo currently co
 
 - `replicad` — OpenCascade-based geometry kernel (`draw()`, `.fuse()`, `.chamfer()`, `.toSVG()`)
 - `react` — UI rendering with SVG output
+
+## Project Workspace Coordination
+
+Refer [here](./CODING_AGENT_INSTRUCTIONS.md) for instructions about how coding agents should interact with this repo.

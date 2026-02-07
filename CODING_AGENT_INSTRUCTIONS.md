@@ -1,0 +1,21 @@
+# Coding Agent Instructions
+
+If you are a coding agent, look for the `General Coordination` section and your section as defined by your name. Only operate according to the instructions in those sections and make changes within the locations PERMITTED WITHIN THOSE DIRECTORIES!!!! DO NOT MESS THIS UP OR THERE WILL BE CONSEQUENCES.
+
+
+## General Coordination
+
+The `app-ref` directory is a minimal, bare-bones directory whose purpose is to bootstrap code from an agent's app directory for running and hosting the static web app version of `trammel`. Ideal case is to have routed paths, one per coding agent. If you are a coding agent and you think you need to modify the contents of the `app-ref` directory, explain the changes, why they're necessary, AND ASK PERMISSION EVERY SINGLE TIME!!!! This should really only be necessary if you need to change how your coding agent app needs to be hosted/integrated with the reference app.
+
+The `app-ref` app provides some basic infrastructure for static web app hosting dependencies and routing. This includes `vite` for project management, `React` for UI components, `tanstack` for routing, and `tinybase` for persistence.
+
+
+## Claude
+
+The `app-claude` directory is the workspace for the Claude coding agents to make their version of trammel, with the expectation that content will be exposed to `app-ref`. All routing for `app-claude` content should be managed via this agent's coding directory.
+
+
+## Codex
+
+The `app-codex` directory is the workspace for the Codex coding agents to make their version of trammel, with the expectation that content will be exposed to `app-ref`. All routing for `app-codex` content should be managed via this agent's coding directory.
+

@@ -670,139 +670,151 @@ Both derive from the same rendered `<svg>` DOM node via `XMLSerializer`.
 
 - `createLocalPersister(store, 'trammel')` with auto-save
 
-## File Structure
+## Monorepo Structure
+
+Three packages — the constraint library is independently publishable/embeddable, the core handles eval + errors, and the app is the full web experience.
+
+**Tool**: pnpm workspaces
 
 ```
 trammel/
-├── index.html
-├── package.json
-├── vite.config.ts
-├── tsconfig.json                   # strict: true
-├── src/
-│   ├── main.tsx
-│   ├── App.tsx                     # Layout: editor left, viewport right
-│   ├── types/
-│   │   ├── variables.ts           # TrammelVarValue, TrammelVars, variable metadata
-│   │   └── store.ts               # Table row types, accessor signatures
-│   ├── store/
-│   │   ├── layout.ts              # TinyBase table/index defs
-│   │   ├── schemas.ts             # Zod schemas
-│   │   ├── accessors.ts           # Typed get/set (tb-solid-pod pattern)
-│   │   └── provider.tsx           # React context + localStorage persister
-│   ├── errors/
-│   │   ├── types.ts               # TrammelError discriminated union (all error kinds)
-│   │   ├── collector.ts           # ErrorCollector class — accumulates errors per eval cycle
-│   │   ├── context.tsx            # React ErrorContext provider
-│   │   ├── boundary.tsx           # Error Boundary wrapping SVG viewport
-│   │   └── ErrorPanel.tsx         # Error list UI (badges, line links, inputs, suggestions)
-│   ├── eval/
-│   │   ├── transform.ts           # Sucrase TSX -> JS transform
-│   │   ├── execute.ts             # new Function() with React/replicad/utils in scope
-│   │   └── scope.ts              # Defines what's available in user code (React, draw, etc.)
-│   ├── components/
-│   │   ├── Editor.tsx             # CodeMirror, TSX syntax, Ctrl+Enter to run
-│   │   ├── SvgViewport.tsx        # Pan/zoom container wrapping the rendered output
-│   │   ├── SvgSource.tsx          # Read-only serialized SVG markup view
-│   │   ├── SvgGrid.tsx            # Optional grid overlay
-│   │   ├── Dimension.tsx          # Annotation component (extension lines, arrows, labels)
-│   │   ├── Toolbar.tsx            # Run, Export SVG, Export .tsx, Import
-│   │   └── ProjectSidebar.tsx     # File list
-│   ├── hooks/
-│   │   ├── useEval.ts             # transform + execute + render pipeline
-│   │   ├── useProject.ts          # current project/file state
-│   │   └── useSvgExport.ts        # ref -> XMLSerializer -> download .svg
-│   ├── constraints/
-│   │   ├── types.ts               # Point, Rect, Circle, Line, Arc, RectEdge, RectCorner
-│   │   ├── functions/             # Pure computation constraints (geometry in -> geometry out)
-│   │   │   ├── geometric.ts       # coincident, collinear, parallel, perpendicular, horizontal, vertical
-│   │   │   ├── tangent.ts         # tangentLineToCircle, tangentCircleToLine, pointOfTangency
-│   │   │   ├── concentric.ts      # concentric, centerAtPoint, centerAtCorner
-│   │   │   ├── equal.ts           # equalLength, equalRadius
-│   │   │   ├── mirror.ts          # mirrorPoint, mirrorLine, mirrorCircle, mirrorRect
-│   │   │   ├── angle.ts           # angleBetween, rotateToAngle, midpoint
-│   │   │   ├── point-on-curve.ts  # nearestPointOn*, pointOn*At
-│   │   │   ├── align.ts           # alignCenterX, alignCenterY, alignEdge, alignFlush
-│   │   │   ├── arc.ts             # arcTangentToLines, arcInCorner, arcBetween, filletArc
-│   │   │   ├── distribute.ts      # distributeEvenly, distributeAlongEdge, gridPositions
-│   │   │   ├── offset.ts          # offsetPoint, parallelLine, insetRect, offsetCircle
-│   │   │   ├── query.ts           # rectCenter, rectCorner, lineLength, intersections, distances
-│   │   │   └── svg-helpers.ts     # arcToSVGPath, lineToSVGPath, rectToSVGPath, pathFromPoints
-│   │   ├── components/            # Spatial/layout constraints as React components
-│   │   │   ├── AlignCenter.tsx    # Center children on reference shape
-│   │   │   ├── AlignEdge.tsx      # Align child edge to reference edge
-│   │   │   ├── Concentric.tsx     # Children share reference center
-│   │   │   ├── Distribute.tsx     # Even spacing along line/edge (render prop)
-│   │   │   ├── DistributeOnCircle.tsx  # Radial distribution (render prop)
-│   │   │   ├── Grid.tsx           # 2D grid positions (render prop)
-│   │   │   ├── Mirror.tsx         # Reflect children about axis
-│   │   │   └── Inset.tsx          # Shrink reference rect, pass to children
-│   │   └── index.ts               # Re-exports all functions + components (injected into eval scope)
-│   └── lib/
-│       ├── defaults.ts            # Starter code template
-│       ├── file-io.ts             # Export/import .tsx files
-│       └── color.ts               # Color validation
+├── pnpm-workspace.yaml
+├── package.json                    # Root: scripts for build-all, dev, deploy
+├── tsconfig.base.json              # Shared strict TS config
+├── .github/
+│   └── workflows/
+│       └── deploy.yml              # Build + deploy to GitHub Pages
+│
+├── packages/
+│   ├── constraints/                # @trammel/constraints — independently embeddable
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── src/
+│   │   │   ├── types.ts            # Point, Rect, Circle, Line, Arc, RectEdge, RectCorner
+│   │   │   ├── functions/          # Pure computation constraints
+│   │   │   │   ├── geometric.ts    # coincident, collinear, parallel, perpendicular, h/v
+│   │   │   │   ├── tangent.ts      # tangentLineToCircle, tangentCircleToLine, pointOfTangency
+│   │   │   │   ├── concentric.ts   # concentric, centerAtPoint, centerAtCorner
+│   │   │   │   ├── equal.ts        # equalLength, equalRadius
+│   │   │   │   ├── mirror.ts       # mirrorPoint, mirrorLine, mirrorCircle, mirrorRect
+│   │   │   │   ├── angle.ts        # angleBetween, rotateToAngle, midpoint
+│   │   │   │   ├── point-on-curve.ts # nearestPointOn*, pointOn*At
+│   │   │   │   ├── align.ts        # alignCenterX, alignCenterY, alignEdge, alignFlush
+│   │   │   │   ├── arc.ts          # arcTangentToLines, arcInCorner, arcBetween, filletArc
+│   │   │   │   ├── distribute.ts   # distributeEvenly, distributeAlongEdge, gridPositions
+│   │   │   │   ├── offset.ts       # offsetPoint, parallelLine, insetRect, offsetCircle
+│   │   │   │   ├── query.ts        # rectCenter, rectCorner, lineLength, intersections, distances
+│   │   │   │   └── svg-helpers.ts  # arcToSVGPath, lineToSVGPath, rectToSVGPath, pathFromPoints
+│   │   │   ├── components/         # React constraint components (thin wrappers over functions)
+│   │   │   │   ├── AlignCenter.tsx
+│   │   │   │   ├── AlignEdge.tsx
+│   │   │   │   ├── Concentric.tsx
+│   │   │   │   ├── Distribute.tsx
+│   │   │   │   ├── DistributeOnCircle.tsx
+│   │   │   │   ├── Grid.tsx
+│   │   │   │   ├── Mirror.tsx
+│   │   │   │   └── Inset.tsx
+│   │   │   └── index.ts            # Barrel export
+│   │   └── vitest.config.ts
+│   │
+│   ├── core/                       # @trammel/core — eval pipeline, errors, variable system
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── src/
+│   │   │   ├── errors/
+│   │   │   │   ├── types.ts        # TrammelError discriminated union
+│   │   │   │   ├── collector.ts    # ErrorCollector class
+│   │   │   │   ├── context.tsx     # React ErrorContext provider
+│   │   │   │   └── boundary.tsx    # Error Boundary
+│   │   │   ├── eval/
+│   │   │   │   ├── transform.ts    # Sucrase TSX -> JS
+│   │   │   │   ├── execute.ts      # new Function() with scope injection
+│   │   │   │   └── scope.ts        # Injected scope
+│   │   │   ├── variables/
+│   │   │   │   └── types.ts        # TrammelVarValue, TrammelVars
+│   │   │   └── index.ts
+│   │   └── vitest.config.ts
+│   │
+│   └── app/                        # @trammel/app — full web experience (GitHub Pages)
+│       ├── package.json
+│       ├── tsconfig.json
+│       ├── vite.config.ts          # WASM handling, base path for GH Pages
+│       ├── index.html
+│       ├── src/
+│       │   ├── main.tsx
+│       │   ├── App.tsx
+│       │   ├── store/
+│       │   │   ├── layout.ts       # TinyBase table/index defs
+│       │   │   ├── schemas.ts      # Zod schemas
+│       │   │   ├── accessors.ts    # Typed get/set
+│       │   │   └── provider.tsx    # React context + localStorage persister
+│       │   ├── components/
+│       │   │   ├── Editor.tsx      # CodeMirror, TSX syntax, Ctrl+Enter
+│       │   │   ├── SvgViewport.tsx # Pan/zoom container
+│       │   │   ├── SvgSource.tsx   # Read-only SVG markup view
+│       │   │   ├── SvgGrid.tsx     # Grid overlay
+│       │   │   ├── Dimension.tsx   # Annotation component
+│       │   │   ├── ErrorPanel.tsx  # Error list UI
+│       │   │   ├── Toolbar.tsx     # Run, Export, Import
+│       │   │   └── ProjectSidebar.tsx
+│       │   ├── hooks/
+│       │   │   ├── useEval.ts
+│       │   │   ├── useProject.ts
+│       │   │   └── useSvgExport.ts
+│       │   └── lib/
+│       │       ├── defaults.ts
+│       │       ├── file-io.ts
+│       │       └── color.ts
+│       └── vitest.config.ts
 ```
+
+### Package Dependency Graph
+
+```
+@trammel/constraints  (zero deps besides React peer)
+       ^
+@trammel/core         (depends on constraints + sucrase)
+       ^
+@trammel/app          (depends on core + tinybase + codemirror + replicad)
+```
+
+### Embedding Use Cases
+
+- **Use `@trammel/constraints` standalone** — import constraint functions + React components into any React project
+- **Use `@trammel/core`** — get the eval pipeline + error system + constraints for a custom editor
+- **Use `@trammel/app`** — full trammel web experience, deploy to GitHub Pages or embed as iframe
 
 ## Implementation Steps
 
-### Step 1: Scaffold project
-- Create `trammel/` with Vite React-TS template (strict tsconfig)
-- Install: `replicad`, `replicad-opencascadejs`, `sucrase`, `tinybase`, `@tinybase/ui-react`, CodeMirror 6 packages, `zod`
-- Configure `vite.config.ts` for WASM
+### Step 1: Scaffold monorepo
+- Create `trammel/` with pnpm workspace
+- Three packages: `packages/constraints/`, `packages/core/`, `packages/app/`
+- Shared `tsconfig.base.json` (strict), per-package tsconfig extending it
+- Install deps per package (see dependency graph above)
 
-### Step 2: Define types
-- `types/variables.ts`: `TrammelVarValue`, `TrammelVars`, variable metadata type
-- `types/store.ts`: row types for TinyBase tables
+### Step 2: @trammel/constraints — types + core functions
+- `types.ts`: geometric primitives
+- Priority function modules: query, align, distribute, offset, arc, concentric, svg-helpers
+- Remaining modules as stubs: geometric, tangent, equal, mirror, angle, point-on-curve
 
-### Step 3: Error system
-- `errors/types.ts`: `TrammelError` discriminated union — syntax, eval, constraint, geometry, variable, render
-- `errors/collector.ts`: `ErrorCollector` class — report(), getErrors(), clear()
-- `errors/context.tsx`: React context providing ErrorCollector to constraint components
-- `errors/boundary.tsx`: Error Boundary catching render errors -> reports to collector
-- `errors/ErrorPanel.tsx`: error list UI — kind badge, line number (clickable), message, inputs, suggestion
+### Step 3: @trammel/constraints — React components
+- Priority: AlignCenter, Distribute, Concentric, Inset
+- Remaining as stubs: AlignEdge, DistributeOnCircle, Grid, Mirror
 
-### Step 4: Constraint library
-- `constraints/types.ts`: `Point`, `Rect`, `Circle`, `Line`, `Arc`, `RectEdge`, `RectCorner`
-- `constraints/functions/`: all pure constraint functions — each reports to ErrorCollector on failure, returns fallback value to keep rendering
-- `constraints/components/`: React wrappers — delegate to functions, report via ErrorContext, render children in degraded state on failure
-- `constraints/index.ts`: barrel export
+### Step 4: @trammel/core — error system
+- TrammelError type, ErrorCollector, ErrorContext, Error Boundary
 
-### Step 5: Eval pipeline
-- `eval/transform.ts`: Sucrase TSX -> JS (syntax errors -> ErrorCollector)
-- `eval/scope.ts`: define injected scope — React, createElement, useMemo, draw (replicad), ALL constraint functions + components, ErrorCollector
-- `eval/execute.ts`: `new Function(...)` -> React element (runtime errors -> ErrorCollector)
-- `useEval` hook: wires transform -> execute -> render into container, passes ErrorCollector through
+### Step 5: @trammel/core — eval pipeline
+- Sucrase transform, scope injection, execute, variable types
 
-### Step 6: Replicad init
-- Initialize OpenCascade WASM on app startup (main thread for v1)
-- Expose `draw`, `Sketcher`, `drawCircle`, `drawRectangle`, etc. in the eval scope
-- Wrap replicad calls to catch geometry errors -> ErrorCollector with operation name + suggestion
+### Step 6: @trammel/app — TinyBase store + replicad init
 
-### Step 7: TinyBase store
-- `layout.ts`, `schemas.ts`, `accessors.ts`, `provider.tsx`
-- localStorage persistence keyed as `'trammel'`
+### Step 7: @trammel/app — Editor + Viewport + ErrorPanel
 
-### Step 8: Editor component
-- CodeMirror 6, TSX syntax highlighting
-- Debounced save to TinyBase `files`
-- Ctrl+Enter to trigger eval
-- Error line highlighting: errors with line numbers get red gutter markers in the editor
+### Step 8: @trammel/app — layout + toolbar + wiring + defaults
 
-### Step 9: SvgViewport + SvgSource + ErrorPanel
-- Viewport: container div where eval renders the user's Root component, wrapped in Error Boundary
-- Pan (pointer drag), zoom (wheel), reset (fit-to-view), coordinate readout
-- Source tab: `XMLSerializer` on the `<svg>` node -> read-only CodeMirror with XML highlighting
-- Error panel: below viewport, shows all collected errors with clickable line numbers
-
-### Step 10: App layout + Toolbar
-- Horizontal split: editor left, viewport/source/errors right
-- Toolbar: Run, Export SVG, Export .tsx, Import .tsx
-
-### Step 11: Wire together + defaults
-- Default starter project with example using constraint functions + components
-- Variable extraction -> TinyBase `variables` table
-- Auto-eval on load
-- ErrorCollector cleared on each new eval cycle, repopulated as pipeline runs
+### Step 9: Deployment
+- GitHub Actions workflow, `pnpm run deploy`
 
 ## SVG Export
 
