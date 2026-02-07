@@ -137,7 +137,7 @@ function CodexRoute() {
     () =>
       React.lazy(async () => {
         const mod = await import('@app-codex/CodexApp');
-        return { default: mod.CodexApp };
+        return { default: mod.default };
       }),
     []
   );

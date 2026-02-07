@@ -1,6 +1,5 @@
-import React from 'react';
 import App from './App';
 
-export function CodexApp() {
+export default function CodexApp() {
   return <App />;
 }
