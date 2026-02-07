@@ -185,6 +185,14 @@ export const router = createRouter({
 });
 
 export function AppRouter() {
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#/')) return;
+    const target = hash.slice(1);
+    window.history.replaceState({}, '', (import.meta.env.BASE_URL ?? '/') + target.replace(/^\//, ''));
+    router.navigate({ to: target, replace: true });
+  }, []);
+
   return <RouterProvider router={router} />;
 }
 
