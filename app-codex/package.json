@@ -1,0 +1,14 @@
+{
+  "name": "trammel-app-codex",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "jsdom": "^28.0.0",
+    "vitest": "^1.6.0"
+  }
+}

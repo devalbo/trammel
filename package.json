@@ -1,0 +1,18 @@
+{
+  "name": "trammel",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "app-ref",
+    "app-codex"
+  ],
+  "scripts": {
+    "dev": "npm --workspace app-ref run dev",
+    "build": "npm --workspace app-ref run build",
+    "preview": "npm --workspace app-ref run preview",
+    "test": "npm --workspaces --if-present test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
