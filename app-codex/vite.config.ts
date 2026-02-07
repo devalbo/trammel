@@ -19,7 +19,7 @@ export default defineConfig({
           entry: path.resolve(__dirname, 'src/bundle.tsx'),
           name: 'TrammelCodex',
           formats: ['iife'],
-          fileName: () => 'trammel-codex.iife',
+          fileName: (format) => `trammel-codex.${format}.js`,
         },
       }
     : undefined,
