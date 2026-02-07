@@ -136,7 +136,7 @@ function CodexRoute() {
   const DevCodex = React.useMemo(
     () =>
       React.lazy(async () => {
-        const mod = await import('@codex/CodexApp');
+        const mod = await import('@app-codex/CodexApp');
         return { default: mod.CodexApp };
       }),
     []
@@ -191,7 +191,7 @@ const codexRoute = createRoute({
   component: CodexRoute,
 });
 
-const LazyClaudeRoute = React.lazy(() => import('@claude/ClaudeRoute'));
+const LazyClaudeRoute = React.lazy(() => import('@app-claude/ClaudeRoute'));
 
 function ClaudeRouteWrapper() {
   return (

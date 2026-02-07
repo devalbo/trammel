@@ -9,8 +9,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@codex': path.resolve(__dirname, '../app-codex/src'),
-      '@claude': path.resolve(__dirname, '../app-claude/src'),
+      '@app-codex': path.resolve(__dirname, '../app-codex/src'),
+      '@app-claude': path.resolve(__dirname, '../app-claude/src'),
     },
   },
   server: {

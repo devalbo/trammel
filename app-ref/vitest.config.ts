@@ -6,7 +6,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@codex': path.resolve(__dirname, '../app-codex/src'),
+      '@app-codex': path.resolve(__dirname, '../app-codex/src'),
+      '@app-claude': path.resolve(__dirname, '../app-claude/src'),
     },
   },
   test: {
