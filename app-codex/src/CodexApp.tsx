@@ -1,5 +1,7 @@
 import App from './App';
 
-export default function CodexApp() {
+export function CodexApp() {
   return <App />;
 }
+
+export default CodexApp;
