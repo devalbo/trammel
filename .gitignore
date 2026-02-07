@@ -82,6 +82,10 @@ out
 .nuxt
 dist
 
+# Codex bundle output copied into app-ref public
+app-codex/dist-bundle/
+app-ref/public/app-codex/
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js

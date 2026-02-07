@@ -17,6 +17,9 @@ The `app-ref` app provides some basic infrastructure for static web app hosting 
 ### Running/hosting this project
 As the user/host of this project, I want to treat this whole repo as  single project. `app-ref` is the logical starting point, but everything need to run together as a single deployable/packaged instance. All packages and dependencies should be as a single installation and need to be coordinated accordingly.
 
+### Build separations
+The agent apps are distributed as **prebuilt JS bundles** and loaded by `app-ref` at runtime. The bundle is built from `app-<AGENT>/src/bundle.tsx` (IIFE) and copied into `app-ref/public/app-codex`. This keeps agent built logic isolated from the host build while still rendering in the same page. The host route should load the bundle via `<script>` and mount via a global API (e.g., `window.TrammelCodex.mount`), with a fallback component if the bundle fails to load.
+
 ### Agent Documentation
 Agents should feel free to create documents and plans, as well as link to docs, even those in other agent directories, rather than repeat themselves. Since other agents might be updating their docs, it is up to agents to make sure any dependencies or planning they depend on is kept up to date.
 

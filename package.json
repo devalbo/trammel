@@ -7,12 +7,22 @@
     "app-codex"
   ],
   "scripts": {
-    "dev": "npm --workspace app-ref run dev",
-    "build": "npm --workspace app-ref run build",
+    "dev": "npm run dev:all",
+    "dev:ref": "npm --workspace app-ref run dev",
+    "dev:codex": "npm --workspace app-codex run dev",
+    "dev:all": "concurrently -k \"npm run dev:ref\" \"npm run dev:codex\"",
+    "build": "npm run build:codex && npm run build:copy && npm run build:ref",
+    "build:codex": "npm --workspace app-codex run build:bundle",
+    "build:ci": "CI=true npm run build:codex && BASE_PATH=/${REPO_NAME}/ npm run build:ref",
+    "build:copy": "node scripts/copy-codex-dist.mjs",
+    "build:ref": "npm --workspace app-ref run build",
     "preview": "npm --workspace app-ref run preview",
     "test": "npm --workspaces --if-present test"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
