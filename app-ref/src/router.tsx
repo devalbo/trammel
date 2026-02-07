@@ -8,6 +8,7 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 import { CodexApp } from '@codex/CodexApp';
+import { appConfig } from './config';
 
 function RootLayout() {
   return (
@@ -21,6 +22,14 @@ function RootLayout() {
           <Link to="/app-codex" style={{ textDecoration: 'none' }}>
             Codex
           </Link>
+          <a
+            href={appConfig.githubRepoUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ textDecoration: 'none' }}
+          >
+            GitHub
+          </a>
         </nav>
       </header>
       <Outlet />
