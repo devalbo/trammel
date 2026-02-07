@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
-// import App from './App';
+import App from './App';
 
 type MountOptions = {
   element: HTMLElement;
@@ -19,7 +19,7 @@ const api: CodexBundleApi = {
     roots.set(element, root);
     root.render(
       <React.StrictMode>
-        {/* <App /> */}<div>Hello, Codex!</div>
+        <App />
       </React.StrictMode>
     );
   },

@@ -3,6 +3,7 @@ import { transform } from 'sucrase';
 import { createTrammelPersister, createTrammelStore } from './store';
 import * as constraints from './constraints';
 import { initReplicad } from './replicad/init';
+import { draw } from 'replicad';
 
 const styles = {
   app: {
@@ -204,7 +205,7 @@ const styles = {
   },
 };
 
-const defaultCode = `// trammel codex demo\nconst vars = {\n  width: 320,\n  height: 160,\n  cornerRadius: 18,\n  panel: '#f2f4f7',\n  accent: '#2563eb',\n  inset: 14,\n};\n\nconst panel: Rect = { x: 0, y: 0, width: vars.width, height: vars.height };\nconst inner = insetRect(panel, vars.inset);\nconst badge = rectCorner(inner, 'topRight');\n\nconst Panel = () => (\n  <g>\n    <rect\n      x={panel.x}\n      y={panel.y}\n      width={panel.width}\n      height={panel.height}\n      rx={vars.cornerRadius}\n      fill={vars.panel}\n      stroke="#0f172a"\n      strokeWidth={2}\n    />\n    <circle cx={panel.width * 0.18} cy={panel.height * 0.5} r={22} fill={vars.accent} />\n    <rect\n      x={inner.x + 12}\n      y={inner.y + 28}\n      width={inner.width * 0.6}\n      height={inner.height * 0.4}\n      rx={12}\n      fill="#e2e8f0"\n      stroke="#0f172a"\n      strokeWidth={1.5}\n    />\n    <circle cx={badge.x - 16} cy={badge.y + 16} r={8} fill={vars.accent} />\n  </g>\n);\n\nconst Root = () => (\n  <svg viewBox={\`-10 -10 \${vars.width + 20} \${vars.height + 20}\`}>\n    <Panel />\n  </svg>\n);\n`;
+const defaultCode = `// trammel codex demo\nconst vars = {\n  width: 320,\n  height: 160,\n  cornerRadius: 18,\n  panel: '#f2f4f7',\n  accent: '#2563eb',\n  inset: 14,\n  useReplicad: false,\n};\n\nconst panel: Rect = { x: 0, y: 0, width: vars.width, height: vars.height };\nconst inner = insetRect(panel, vars.inset);\nconst badge = rectCorner(inner, 'topRight');\n\nconst Panel = () => (\n  <g>\n    <rect\n      x={panel.x}\n      y={panel.y}\n      width={panel.width}\n      height={panel.height}\n      rx={vars.cornerRadius}\n      fill={vars.panel}\n      stroke="#0f172a"\n      strokeWidth={2}\n    />\n    <circle cx={panel.width * 0.18} cy={panel.height * 0.5} r={22} fill={vars.accent} />\n    <rect\n      x={inner.x + 12}\n      y={inner.y + 28}\n      width={inner.width * 0.6}\n      height={inner.height * 0.4}\n      rx={12}\n      fill="#e2e8f0"\n      stroke="#0f172a"\n      strokeWidth={1.5}\n    />\n    <circle cx={badge.x - 16} cy={badge.y + 16} r={8} fill={vars.accent} />\n  </g>\n);\n\nconst ReplicadPanel = () => {\n  if (!vars.useReplicad) return null;\n  const path = draw()\n    .rect(vars.width, vars.height)\n    .chamfer(6)\n    .toSVGPaths()[0];\n  return <path d={path} fill=\"none\" stroke=\"#0f172a\" strokeWidth={2} />;\n};\n\nconst Root = () => (\n  <svg viewBox={\`-10 -10 \${vars.width + 20} \${vars.height + 20}\`}>\n    <Panel />\n    <ReplicadPanel />\n  </svg>\n);\n`;
 
 type EvalResult = {
   element: React.ReactElement | null;
@@ -212,6 +213,46 @@ type EvalResult = {
   vars: Record<string, unknown>;
   evalMs: number;
 };
+
+function ReplicadGate({
+  ready,
+  children,
+}: {
+  ready: boolean;
+  children: React.ReactNode;
+}) {
+  if (!ready) {
+    return (
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 10px',
+          borderRadius: 999,
+          border: '1px solid #cbd2d9',
+          background: '#f8fafc',
+          color: '#52606d',
+          fontSize: 12,
+        }}
+      >
+        <span
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            border: '2px solid #cbd2d9',
+            borderTopColor: '#1f2933',
+            display: 'inline-block',
+            animation: 'spin 1s linear infinite',
+          }}
+        />
+        Replicad loading…
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 function prettyPrintXml(source: string) {
   try {
@@ -258,6 +299,7 @@ function evaluateTsx(source: string, overrides: Record<string, unknown>): EvalRe
         alignCenterY,
         distributeEvenly,
       } = constraints;
+      const draw = replicad.draw;
       ${code}
       if (typeof vars === 'object' && vars !== null) {
         Object.assign(vars, overrides ?? {});
@@ -275,14 +317,16 @@ function evaluateTsx(source: string, overrides: Record<string, unknown>): EvalRe
     const factory = new Function(
       'React',
       'constraints',
+      'replicad',
       'overrides',
       wrapped
     ) as (
       react: typeof React,
       helpers: typeof constraints,
+      replicad: { draw: typeof draw },
       overrides: Record<string, unknown>
     ) => { element: React.ReactElement | null; vars: Record<string, unknown> };
-    const result = factory(React, constraints, overrides);
+    const result = factory(React, constraints, { draw }, overrides);
     const evalMs = performance.now() - start;
     return { element: result.element, vars: result.vars, error: null, evalMs };
   } catch (err) {
@@ -456,9 +500,14 @@ export default function App() {
   }, [output.error]);
 
   const varsEntries = Object.entries(output.vars ?? {});
+  const wantsReplicad =
+    typeof output.vars?.useReplicad === 'boolean' ? output.vars.useReplicad : false;
 
   return (
     <div style={styles.app}>
+      <style>
+        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
+      </style>
       <header style={styles.header}>
         <h1 style={styles.title}>trammel codex</h1>
         <p style={styles.subtitle}>Editor left, SVG viewport right.</p>
@@ -591,7 +640,11 @@ export default function App() {
           </div>
           <div style={styles.viewport} ref={viewportRef}>
             {activeTab === 'visual' ? (
-              rendered
+              wantsReplicad && replicadStatus.state !== 'ready' ? (
+                <ReplicadGate ready={false}>{rendered}</ReplicadGate>
+              ) : (
+                rendered
+              )
             ) : (
               <pre style={styles.source}>{svgSource || 'No SVG rendered yet.'}</pre>
             )}

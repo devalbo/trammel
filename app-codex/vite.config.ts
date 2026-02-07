@@ -25,5 +25,6 @@ export default defineConfig({
     : undefined,
   server: {
     port: 5174,
+    cors: true,
   },
 });
