@@ -16,10 +16,10 @@ function RootLayout() {
       <header style={{ marginBottom: 24 }}>
         <h1 style={{ margin: 0 }}>trammel app-ref</h1>
         <nav style={{ marginTop: 12, display: 'flex', gap: 12 }}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
+          <a href={baseUrl} style={{ textDecoration: 'none' }}>
             Home
-          </Link>
-          <a href={`${baseUrl}app-codex`} style={{ textDecoration: 'none' }}>
+          </a>
+          <a href={`${baseUrl}app-codex/`} style={{ textDecoration: 'none' }}>
             Codex
           </a>
           <a
@@ -171,6 +171,7 @@ const routeTree = rootRoute.addChildren([indexRoute, codexRoute]);
 
 export const router = createRouter({
   routeTree,
+  basepath: (import.meta.env.BASE_URL ?? '/').replace(/\/$/, ''),
 });
 
 export function AppRouter() {
