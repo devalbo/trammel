@@ -17,6 +17,9 @@ The `app-ref` app provides some basic infrastructure for static web app hosting 
 ### Running/hosting this project
 As the user/host of this project, I want to treat this whole repo as  single project. `app-ref` is the logical starting point, but everything need to run together as a single deployable/packaged instance. All packages and dependencies should be as a single installation and need to be coordinated accordingly.
 
+### Agent Documentation
+Agents should feel free to create documents and plans, as well as link to docs, even those in other agent directories, rather than repeat themselves. Since other agents might be updating their docs, it is up to agents to make sure any dependencies or planning they depend on is kept up to date.
+
 
 ## Claude
 
