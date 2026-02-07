@@ -10,6 +10,7 @@ import {
 import { appConfig } from './config';
 
 function RootLayout() {
+  const baseUrl = import.meta.env.BASE_URL ?? '/';
   return (
     <div style={{ fontFamily: '"Times New Roman", serif', padding: 24 }}>
       <header style={{ marginBottom: 24 }}>
@@ -18,9 +19,9 @@ function RootLayout() {
           <Link to="/" style={{ textDecoration: 'none' }}>
             Home
           </Link>
-          <Link to="/app-codex" style={{ textDecoration: 'none' }}>
+          <a href={`${baseUrl}app-codex`} style={{ textDecoration: 'none' }}>
             Codex
-          </Link>
+          </a>
           <a
             href={appConfig.githubRepoUrl}
             target="_blank"
