@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import {
   Link,
   Outlet,
@@ -21,6 +21,9 @@ function RootLayout() {
           </a>
           <a href={`${baseUrl}app-codex/`} style={{ textDecoration: 'none' }}>
             Codex
+          </a>
+          <a href={`${baseUrl}app-claude/`} style={{ textDecoration: 'none' }}>
+            Claude
           </a>
           <a
             href={appConfig.githubRepoUrl}
@@ -67,13 +70,14 @@ function CodexNotWorking({ message }: { message: string }) {
 }
 
 function CodexRoute() {
+  const isDev = import.meta.env.DEV;
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const isDev = import.meta.env.DEV;
   const hostOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
   React.useEffect(() => {
+    if (isDev) return;
     let mounted = true;
     const element = containerRef.current;
 
@@ -114,12 +118,7 @@ function CodexRoute() {
     }
 
     const script = document.createElement('script');
-    if (isDev) {
-      script.type = 'module';
-      script.src = 'http://localhost:5174/src/bundle.tsx';
-    } else {
-      script.src = `${import.meta.env.BASE_URL}app-codex/trammel-codex.iife.js`;
-    }
+    script.src = `${import.meta.env.BASE_URL}app-codex/trammel-codex.iife.js`;
     script.async = true;
     script.onload = onLoad;
     script.onerror = () => {
@@ -133,6 +132,15 @@ function CodexRoute() {
       unmountCodex();
     };
   }, []);
+
+  const DevCodex = React.useMemo(
+    () =>
+      React.lazy(async () => {
+        const mod = await import('@codex/CodexApp');
+        return { default: mod.CodexApp };
+      }),
+    []
+  );
 
   if (error) return <CodexNotWorking message={error} />;
 
@@ -150,11 +158,19 @@ function CodexRoute() {
             marginBottom: 12,
           }}
         >
-          Dev loader: host {hostOrigin} · bundle http://localhost:5174
+          Dev loader: host {hostOrigin} · source via app-ref
         </div>
       ) : null}
-      {loading ? <div>Loading Codex…</div> : null}
-      <div ref={containerRef} />
+      {isDev ? (
+        <Suspense fallback={<div>Loading Codex…</div>}>
+          <DevCodex />
+        </Suspense>
+      ) : (
+        <>
+          {loading ? <div>Loading Codex…</div> : null}
+          <div ref={containerRef} />
+        </>
+      )}
     </div>
   );
 }
@@ -175,7 +191,23 @@ const codexRoute = createRoute({
   component: CodexRoute,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, codexRoute]);
+const LazyClaudeRoute = React.lazy(() => import('@claude/ClaudeRoute'));
+
+function ClaudeRouteWrapper() {
+  return (
+    <Suspense fallback={<div>Loading Claude…</div>}>
+      <LazyClaudeRoute />
+    </Suspense>
+  );
+}
+
+const claudeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'app-claude',
+  component: ClaudeRouteWrapper,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, codexRoute, claudeRoute]);
 
 export const router = createRouter({
   routeTree,
