@@ -23,6 +23,13 @@ The agent apps are distributed as **prebuilt JS bundles** and loaded by `app-ref
 ### Agent Documentation
 Agents should feel free to create documents and plans, as well as link to docs, even those in other agent directories, rather than repeat themselves. Since other agents might be updating their docs, it is up to agents to make sure any dependencies or planning they depend on is kept up to date.
 
+### App separations
+There should be a app level, shared store for common environment settings, configuration values, and non-agent app specific preferences.
+
+Each agent may create its own persistent store to be managed by its app. Each agent may not access or be aware of any persistence store other than that for its app and the app level shared store. If an agent app wants to make changes to the app level shared store, IT MUST SEEK PERMISSION AND JUSTIFY ITS REASONING!!!
+
+Persistence store note: shared app-level storage is not implemented yet. Agent apps should use a local TinyBase persister keyed to their app namespace (e.g., `trammel-codex`) and must not read or write any other app’s storage.
+
 
 ## Claude
 

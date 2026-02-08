@@ -17,7 +17,9 @@ app-claude/
 ├── src/
 │   ├── bundle.tsx              # IIFE entry — window.TrammelClaude mount/unmount
 │   ├── main.tsx                # Standalone dev entry
-│   ├── App.tsx                 # Root app component
+│   ├── App.tsx                 # Root app — composes all components (~180 lines)
+│   ├── styles.ts               # Shared style objects + errorKindColors
+│   ├── ClaudeRoute.tsx          # Route wrapper for app-ref integration
 │   ├── constraints/
 │   │   ├── types.ts            # Point, Rect, Circle, Line, Arc, RectEdge, RectCorner
 │   │   ├── query.ts            # rectCenter, rectCorner, rectEdge, lineLength, distances, intersections
@@ -43,9 +45,7 @@ app-claude/
 │   │   ├── context.tsx         # React ErrorContext provider
 │   │   └── boundary.tsx        # Error Boundary component
 │   ├── eval/
-│   │   ├── transform.ts        # Sucrase TSX → JS
-│   │   ├── execute.ts          # new Function() with scope injection
-│   │   └── scope.ts            # Build the injected scope object
+│   │   └── evaluate.ts         # evaluateTsx, prettyPrintXml, defaultCode, EvalResult
 │   ├── store/
 │   │   └── store.ts            # TinyBase store + localStorage persister
 │   ├── components/
@@ -53,79 +53,88 @@ app-claude/
 │   │   ├── SvgViewport.tsx      # SVG render container (Visual + Source tabs)
 │   │   ├── ErrorPanel.tsx       # Structured error list with kind badges
 │   │   ├── VariablePanel.tsx    # Auto-generated variable controls
-│   │   └── Toolbar.tsx          # Run, Reset, Import, Export buttons
+│   │   ├── Toolbar.tsx          # Run, Reset, Import, Export buttons
+│   │   └── Diagnostics.tsx      # Eval/serialize timing, SVG stats, replicad status
 │   └── replicad/
 │       └── init.ts             # Replicad WASM initialization
 ```
 
 ## Implementation Steps
 
-### Step 1: Project scaffold
-- [ ] `package.json` — react, react-dom, sucrase, tinybase, replicad, replicad-opencascadejs
-- [ ] `tsconfig.json` — strict, ES2022, react-jsx
-- [ ] `vite.config.ts` — IIFE bundle mode (matches codex pattern), dev port 5175
-- [ ] `vitest.config.ts` — jsdom environment
-- [ ] `index.html` — standalone dev
+### Step 1: Project scaffold — DONE
+- [x] `package.json` — react, react-dom, sucrase, tinybase, replicad, replicad-opencascadejs
+- [x] `tsconfig.json` — strict, ES2022, react-jsx
+- [x] `vite.config.ts` — IIFE bundle mode (matches codex pattern), dev port 5175
+- [x] `vitest.config.ts` — jsdom environment
+- [x] `index.html` — standalone dev
 
-### Step 2: Constraint types + core functions (per DESIGN.md)
-- [ ] `types.ts` — Point, Rect, Circle, Line, Arc, RectEdge, RectCorner
-- [ ] `query.ts` — rectCenter, rectCorner, rectEdgeMidpoint, rectEdge, circleCenter, circleBoundingBox, lineLength, lineAngle, lineDirection, distanceBetween, distancePointToLine, distancePointToCircle, lineLineIntersection, lineCircleIntersection, circleCircleIntersection, lineRectIntersection
-- [ ] `align.ts` — alignCenterX, alignCenterY, alignEdge, alignFlush
-- [ ] `distribute.ts` — distributeEvenly, distributeAlongEdge, gridPositions, distributeOnCircle
-- [ ] `offset.ts` — offsetPoint, parallelLine, insetRect, offsetCircle
-- [ ] `arc.ts` — arcTangentToLines, arcInCorner, arcBetween, filletArc
-- [ ] `geometric.ts` — coincident, centerAtPoint, centerAtCorner, centerAtEdgeMidpoint, concentric, collinear, parallel, parallelThrough, perpendicular, perpendicularThrough, perpendicularAt, horizontal, vertical, horizontalDistance, verticalDistance, midpoint, nearestPointOnLine, nearestPointOnCircle, pointOnLineAt, pointOnCircleAt, pointOnArcAt, angleBetween, rotateToAngle
-- [ ] `mirror.ts` — mirrorPoint, mirrorLine, mirrorCircle, mirrorRect, mirrorPointAbout
-- [ ] `svg-helpers.ts` — arcToSVGPath, lineToSVGPath, rectToSVGPath, circleToSVGPath, pathFromPoints
-- [ ] `index.ts` — barrel export
+### Step 2: Constraint types + core functions (per DESIGN.md) — DONE
+- [x] `types.ts` — Point, Rect, Circle, Line, Arc, RectEdge, RectCorner
+- [x] `query.ts` — rectCenter, rectCorner, rectEdgeMidpoint, rectEdge, circleCenter, circleBoundingBox, lineLength, lineAngle, lineDirection, distanceBetween, distancePointToLine, distancePointToCircle, lineLineIntersection, lineCircleIntersection, circleCircleIntersection, lineRectIntersection
+- [x] `align.ts` — alignCenterX, alignCenterY, alignEdge, alignFlush
+- [x] `distribute.ts` — distributeEvenly, distributeAlongEdge, gridPositions, distributeOnCircle
+- [x] `offset.ts` — offsetPoint, parallelLine, insetRect, offsetCircle
+- [x] `arc.ts` — arcTangentToLines, arcInCorner, arcBetween, filletArc
+- [x] `geometric.ts` — coincident, centerAtPoint, centerAtCorner, centerAtEdgeMidpoint, concentric, collinear, parallel, parallelThrough, perpendicular, perpendicularThrough, perpendicularAt, horizontal, vertical, horizontalDistance, verticalDistance, midpoint, nearestPointOnLine, nearestPointOnCircle, pointOnLineAt, pointOnCircleAt, pointOnArcAt, angleBetween, rotateToAngle
+- [x] `mirror.ts` — mirrorPoint, mirrorLine, mirrorCircle, mirrorRect, mirrorPointAbout
+- [x] `svg-helpers.ts` — arcToSVGPath, lineToSVGPath, rectToSVGPath, circleToSVGPath, pathFromPoints
+- [x] `index.ts` — barrel export
 
-### Step 3: Constraint React components (dual expression pattern)
-- [ ] AlignCenter — centers children on reference shape
-- [ ] Concentric — children share reference center
-- [ ] Distribute — even spacing along a line/edge (render prop)
-- [ ] Inset — shrink reference rect (render prop)
-- [ ] Mirror — reflect children about axis
-- [ ] Grid — 2D grid positions (render prop)
-- [ ] components/index.ts — barrel export
+### Step 3: Constraint React components (dual expression pattern) — DONE
+- [x] AlignCenter — centers children on reference shape
+- [x] Concentric — children share reference center
+- [x] Distribute — even spacing along a line/edge (render prop)
+- [x] Inset — shrink reference rect (render prop)
+- [x] Mirror — reflect children about axis
+- [x] Grid — 2D grid positions (render prop)
+- [x] components/index.ts — barrel export
 
-### Step 4: Error system (per DESIGN.md)
-- [ ] `types.ts` — TrammelError: syntax | eval | constraint | geometry | variable | render
-- [ ] `collector.ts` — ErrorCollector: report(), getErrors(), hasErrors(), clear()
-- [ ] `context.tsx` — ErrorContext + useErrorCollector hook
-- [ ] `boundary.tsx` — Error Boundary catching render errors, reporting to collector
+### Step 4: Error system (per DESIGN.md) — DONE
+- [x] `types.ts` — TrammelError: syntax | eval | constraint | geometry | variable | render
+- [x] `collector.ts` — ErrorCollector: report(), getErrors(), hasErrors(), clear()
+- [x] `context.tsx` — ErrorContext + useErrorCollector hook
+- [x] `boundary.tsx` — Error Boundary catching render errors, reporting to collector
 
-### Step 5: Eval pipeline
-- [ ] `transform.ts` — Sucrase TSX→JS, captures syntax errors to collector
-- [ ] `scope.ts` — Builds scope: React hooks, all constraint functions, constraint components
-- [ ] `execute.ts` — new Function() execution, captures eval/runtime errors, extracts vars object
+### Step 5: Eval pipeline — DONE
+- [x] Sucrase TSX→JS transform with syntax error capture
+- [x] new Function() execution with scope injection, eval error capture, vars extraction
+- [x] `eval/evaluate.ts` — evaluateTsx, prettyPrintXml, defaultCode, EvalResult type (consolidated module)
 
-### Step 6: Store + Replicad
-- [ ] `store.ts` — TinyBase createStore + createLocalPersister('trammel-claude')
-- [ ] `replicad/init.ts` — WASM init (same pattern as codex)
+### Step 6: Store + Replicad — DONE
+- [x] `store.ts` — TinyBase createStore + createLocalPersister('trammel-claude')
+- [x] `replicad/init.ts` — WASM init (same pattern as codex)
 
-### Step 7: UI Components
-- [ ] `Editor.tsx` — textarea, monospace, Ctrl+Enter to run
-- [ ] `SvgViewport.tsx` — renders React element, Visual/Source tabs, XMLSerializer
-- [ ] `ErrorPanel.tsx` — kind badges (SYNTAX, EVAL, CONSTRAINT, etc.), inputs display, suggestions
-- [ ] `VariablePanel.tsx` — auto-generated: number inputs, color pickers, text inputs
-- [ ] `Toolbar.tsx` — Run, Reset Demo, Import .tsx, Export .tsx, Export .svg
+### Step 7: UI Components — DONE
+- [x] `Editor.tsx` — textarea editor with Ctrl+Enter
+- [x] `SvgViewport.tsx` — viewport with Visual/Source tabs + XMLSerializer
+- [x] `ErrorPanel.tsx` — error list with kind badges + suggestions
+- [x] `VariablePanel.tsx` — auto-generated variable controls
+- [x] `Toolbar.tsx` — Run, Reset, Import, Export buttons
+- [x] `Diagnostics.tsx` — eval time, serialize time, SVG stats, replicad status
 
-### Step 8: App shell + Bundle
-- [ ] `App.tsx` — wires editor + viewport + error panel + variables + diagnostics
-- [ ] `bundle.tsx` — window.TrammelClaude = { mount, unmount }
-- [ ] `main.tsx` — standalone dev entry
+### Step 8: App shell + Bundle — DONE
+- [x] `App.tsx` — composes Editor, Toolbar, SvgViewport, ErrorPanel, VariablePanel, Diagnostics (~180 lines)
+- [x] `bundle.tsx` — window.TrammelClaude = { mount, unmount }
+- [x] `main.tsx` — standalone dev entry
 
-### Step 9: Integration with app-ref
-- [ ] Add `app-claude` to root `package.json` workspaces
-- [ ] Add Claude route to `app-ref/src/router.tsx` (parallel to CodexRoute)
-- [ ] Add nav link in app-ref header
-- [ ] Add `scripts/copy-claude-dist.mjs`
-- [ ] Update root build scripts (dev:claude, build:claude, build:copy-claude)
-- [ ] Update `.gitignore` for claude bundle output
+### Step 9: Integration with app-ref — DONE
+- [x] Add `app-claude` to root `package.json` workspaces
+- [x] Add Claude route to `app-ref/src/router.tsx` (parallel to CodexRoute)
+- [x] Add nav link in app-ref header
+- [x] Add `scripts/copy-claude-dist.mjs`
+- [x] Update root build scripts (dev:claude, build:claude, build:copy-claude)
+- [x] Update `.gitignore` for claude bundle output
 
 ### Step 10: Update this document
-- [ ] Mark completed items
-- [ ] Note architecture decisions made during implementation
+- [x] Mark completed items
+- [x] Note architecture decisions made during implementation
+
+### Step 11: Refactor App.tsx into component modules — DONE
+- [x] Extract `Editor.tsx`, `Toolbar.tsx`, `SvgViewport.tsx`, `ErrorPanel.tsx`, `VariablePanel.tsx`, `Diagnostics.tsx`
+- [x] Extract eval logic into `eval/evaluate.ts`
+- [x] Extract shared styles into `styles.ts`
+- [x] Slim App.tsx from ~720 lines to ~180 lines
+- [x] TypeScript + production build pass cleanly
 
 ## Integration Details
 
@@ -159,3 +168,43 @@ app-claude/
 12. Refresh → code restored from TinyBase
 13. Syntax error → error shown, app doesn't crash
 14. Compose components → nested components render correctly
+
+---
+
+## Next Work (Backlog)
+
+Prioritized by impact. Pick from the top.
+
+### P1 — Missing constraint functions (DESIGN.md gaps)
+- [ ] Tangent constraints: `tangentLineToCircle`, `tangentLineBetweenCircles`, `tangentCircleToLine`, `tangentCircleToCircles`, `pointOfTangency`
+- [ ] Equal constraints: `equalLength`, `equalRadius`
+- [ ] `nearestPointOnArc` — point-on-arc constraint
+
+### P1 — Missing constraint React components
+- [ ] `<AlignEdge>` — aligns child edge to reference edge (pure function exists, component missing)
+- [ ] `<DistributeOnCircle>` — radial distribution (pure function exists, component missing)
+
+### P2 — Dimension annotations
+- [ ] `<Dimension>` component — extension lines + arrow line + label text (per SVG_CAD_SPECIFICATION.md)
+- [ ] Arrowhead `<marker>` definition
+- [ ] Horizontal, vertical, and aligned dimension variants
+
+### P2 — Viewport interactivity
+- [ ] Pan/zoom controls in SvgViewport (mouse drag + wheel zoom)
+- [ ] Grid overlay with coordinate labels
+
+### P3 — Store expansion (DESIGN.md data model)
+- [ ] `projects` table (id, name, created, updated)
+- [ ] `variables` table (id, fileId, name, type, value, min, max, step) with `variablesByFile` index
+- [ ] `renders` table (id, fileId, svgMarkup, error, timestamp) with `renderByFile` index
+- [ ] Multi-file project support (currently single `default` file)
+
+### P3 — Tests
+- [ ] Constraint pure function unit tests (vitest)
+- [ ] Eval pipeline tests (valid TSX → element, syntax error → reported, runtime error → reported)
+- [ ] Component smoke tests (Editor, Toolbar, SvgViewport render without crash)
+
+### P4 — Polish
+- [ ] Import/export enhancements (filename prompts, drag-and-drop .tsx files)
+- [ ] Project import/export as .json bundles
+- [ ] Variable controls: min/max/step sliders for numbers, toggle switches for booleans

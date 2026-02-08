@@ -15,6 +15,7 @@
     "react-dom": "^19.2.2",
     "replicad": "^0.20.5",
     "replicad-opencascadejs": "^0.20.2",
+    "esbuild-wasm": "^0.27.3",
     "sucrase": "^3.35.0",
     "tinybase": "^7.3.2"
   },

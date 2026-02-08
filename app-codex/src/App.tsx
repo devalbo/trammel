@@ -1,9 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { transform } from 'sucrase';
+import * as ReactJsxRuntime from 'react/jsx-runtime';
+import * as esbuild from 'esbuild-wasm';
+import esbuildWasmUrl from 'esbuild-wasm/esbuild.wasm?url';
 import { createTrammelPersister, createTrammelStore } from './store';
 import * as constraints from './constraints';
 import { initReplicad } from './replicad/init';
 import { draw } from 'replicad';
+import { ErrorBoundary, ErrorCollector, ErrorProvider } from './errors';
 
 const styles = {
   app: {
@@ -214,6 +218,19 @@ type EvalResult = {
   evalMs: number;
 };
 
+const useEsbuildEval = import.meta.env.VITE_USE_ESBUILD_EVAL === '1';
+let esbuildInit: Promise<void> | null = null;
+
+async function ensureEsbuildReady() {
+  if (!esbuildInit) {
+    esbuildInit = esbuild.initialize({
+      wasmURL: esbuildWasmUrl,
+      worker: true,
+    });
+  }
+  await esbuildInit;
+}
+
 function ReplicadGate({
   ready,
   children,
@@ -282,12 +299,38 @@ function prettyPrintXml(source: string) {
   }
 }
 
-function evaluateTsx(source: string, overrides: Record<string, unknown>): EvalResult {
+function evaluateTsx(
+  source: string,
+  overrides: Record<string, unknown>,
+  collector: ErrorCollector | null
+): EvalResult {
   try {
     const start = performance.now();
-    const { code } = transform(source, {
-      transforms: ['typescript', 'jsx'],
-    });
+    collector?.clear();
+    let code: string;
+    try {
+      code = transform(source, {
+        transforms: ['typescript', 'jsx'],
+        jsxRuntime: 'automatic',
+        production: true,
+      }).code;
+      const importMatch = code.match(
+        /^\s*import\s*\{([^}]+)\}\s*from\s*['"]react\/jsx-runtime['"];?/
+      );
+      if (importMatch) {
+        const bindings = importMatch[1]
+          .split(',')
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .map((part) => part.replace(/\s+as\s+/g, ': '))
+          .join(', ');
+        code = code.replace(importMatch[0], `const { ${bindings} } = ReactJsxRuntime;`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      collector?.report({ kind: 'syntax', message, stack: err instanceof Error ? err.stack : undefined });
+      return { element: null, vars: {}, error: message, evalMs: 0 };
+    }
 
     const wrapped = `
       const { useMemo, useState, useEffect, useRef } = React;
@@ -316,35 +359,147 @@ function evaluateTsx(source: string, overrides: Record<string, unknown>): EvalRe
 
     const factory = new Function(
       'React',
+      'ReactJsxRuntime',
       'constraints',
       'replicad',
       'overrides',
       wrapped
     ) as (
       react: typeof React,
+      jsxRuntime: typeof ReactJsxRuntime,
       helpers: typeof constraints,
       replicad: { draw: typeof draw },
       overrides: Record<string, unknown>
     ) => { element: React.ReactElement | null; vars: Record<string, unknown> };
-    const result = factory(React, constraints, { draw }, overrides);
+    const result = factory(React, ReactJsxRuntime, constraints, { draw }, overrides);
     const evalMs = performance.now() - start;
     return { element: result.element, vars: result.vars, error: null, evalMs };
   } catch (err) {
     const evalMs = 0;
     if (err instanceof Error) {
       const stack = err.stack ? `\n${err.stack}` : '';
+      collector?.report({ kind: 'eval', message: err.message, stack: err.stack });
       return { element: null, vars: {}, error: `${err.message}${stack}`, evalMs };
     }
+    collector?.report({ kind: 'eval', message: String(err) });
     return { element: null, vars: {}, error: String(err), evalMs };
   }
 }
 
+async function evaluateTsxEsbuild(
+  source: string,
+  overrides: Record<string, unknown>,
+  collector: ErrorCollector | null
+): Promise<EvalResult> {
+  const start = performance.now();
+  collector?.clear();
+  try {
+    await ensureEsbuildReady();
+    (window as Window & { __TRAMMEL_REACT__?: typeof React }).__TRAMMEL_REACT__ = React;
+    (window as Window & { __TRAMMEL_JSX__?: typeof ReactJsxRuntime }).__TRAMMEL_JSX__ =
+      ReactJsxRuntime;
+    (window as Window & { __TRAMMEL_CONSTRAINTS__?: typeof constraints }).__TRAMMEL_CONSTRAINTS__ =
+      constraints;
+    (window as Window & { __TRAMMEL_REPLICAD__?: { draw: typeof draw } }).__TRAMMEL_REPLICAD__ = {
+      draw,
+    };
+    (window as Window & { __TRAMMEL_OVERRIDES__?: Record<string, unknown> }).__TRAMMEL_OVERRIDES__ =
+      overrides;
+
+    const prelude = `
+const React = window.__TRAMMEL_REACT__;
+const constraints = window.__TRAMMEL_CONSTRAINTS__;
+const replicad = window.__TRAMMEL_REPLICAD__;
+const overrides = window.__TRAMMEL_OVERRIDES__;
+    `.trim();
+    const postlude = `
+if (typeof vars === 'object' && vars !== null) {
+  Object.assign(vars, overrides ?? {});
+}
+const rootValue = typeof Root !== 'undefined' ? Root : null;
+const element = React.isValidElement(rootValue)
+  ? rootValue
+  : typeof rootValue === 'function'
+    ? React.createElement(rootValue)
+    : null;
+const capturedVars = typeof vars === 'object' && vars !== null ? vars : {};
+export const __TRAMMEL_RESULT__ = { element, vars: capturedVars };
+    `.trim();
+
+    const { outputFiles } = await esbuild.build({
+      bundle: true,
+      write: false,
+      format: 'esm',
+      target: 'es2020',
+      sourcemap: 'inline',
+      jsx: 'automatic',
+      jsxDev: false,
+      stdin: {
+        contents: [prelude, source, postlude].join('\n\n'),
+        loader: 'tsx',
+        resolveDir: '/',
+        sourcefile: 'trammel-codex.tsx',
+      },
+      plugins: [
+        {
+          name: 'trammel-jsx-runtime',
+          setup(build) {
+            build.onResolve({ filter: /^react\/jsx-runtime$/ }, () => ({
+              path: 'react/jsx-runtime',
+              namespace: 'trammel-jsx-runtime',
+            }));
+            build.onResolve({ filter: /^react\/jsx-dev-runtime$/ }, () => ({
+              path: 'react/jsx-dev-runtime',
+              namespace: 'trammel-jsx-runtime',
+            }));
+            build.onLoad({ filter: /.*/, namespace: 'trammel-jsx-runtime' }, () => ({
+              contents: `
+export const jsx = window.__TRAMMEL_JSX__.jsx;
+export const jsxs = window.__TRAMMEL_JSX__.jsxs;
+export const Fragment = window.__TRAMMEL_JSX__.Fragment;
+export const jsxDEV = window.__TRAMMEL_JSX__.jsx;
+              `,
+              loader: 'js',
+            }));
+          },
+        },
+      ],
+    });
+
+    const code = outputFiles?.[0]?.text ?? '';
+
+    const blob = new Blob([code], { type: 'text/javascript' });
+    const url = URL.createObjectURL(blob);
+    try {
+      const mod = await import(/* @vite-ignore */ url);
+      const result = mod.__TRAMMEL_RESULT__ ?? { element: null, vars: {} };
+      const evalMs = performance.now() - start;
+      return { element: result.element, vars: result.vars, error: null, evalMs };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    collector?.report({
+      kind: 'eval',
+      message,
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    return { element: null, vars: {}, error: message, evalMs: 0 };
+  }
+}
+
 export default function App() {
+  const errorCollector = useMemo(() => new ErrorCollector(), []);
   const store = useMemo(() => createTrammelStore(), []);
   const persister = useMemo(() => createTrammelPersister(store), [store]);
   const [code, setCode] = useState(defaultCode);
   const [overrides, setOverrides] = useState<Record<string, unknown>>({});
-  const [output, setOutput] = useState<EvalResult>(() => evaluateTsx(defaultCode, {}));
+  const [output, setOutput] = useState<EvalResult>(() =>
+    useEsbuildEval ? { element: null, vars: {}, error: null, evalMs: 0 } : evaluateTsx(defaultCode, {}, errorCollector)
+  );
+  const evalTokenRef = React.useRef(0);
+  const [isEvaluating, setIsEvaluating] = useState(false);
   const [activeTab, setActiveTab] = useState<'visual' | 'source'>('visual');
   const [svgSource, setSvgSource] = useState('');
   const [svgStats, setSvgStats] = useState({ nodes: 0, bytes: 0 });
@@ -360,15 +515,41 @@ export default function App() {
   const lastErrorRef = React.useRef<string | null>(null);
   const viewportRef = React.useRef<HTMLDivElement | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [dropActive, setDropActive] = useState(false);
 
-  const run = () => {
-    setOutput(evaluateTsx(code, overrides));
+  const evaluateAndSet = async (source: string, nextOverrides: Record<string, unknown>) => {
+    const token = evalTokenRef.current + 1;
+    evalTokenRef.current = token;
+    if (useEsbuildEval) {
+      setIsEvaluating(true);
+      const result = await evaluateTsxEsbuild(source, nextOverrides, errorCollector);
+      if (evalTokenRef.current === token) {
+        setOutput(result);
+        setIsEvaluating(false);
+      }
+      return;
+    }
+    setOutput(evaluateTsx(source, nextOverrides, errorCollector));
+  };
+
+  const run = async () => {
+    await evaluateAndSet(code, overrides);
     setLogs((prev) => [`Ran eval (${code.length} chars)`, ...prev].slice(0, 6));
   };
-  const resetToDefault = () => {
+  const runImport = async (text: string, name?: string, size?: number) => {
+    setCode(text);
+    setOverrides({});
+    await evaluateAndSet(text, {});
+    if (name && typeof size === 'number') {
+      setLogs((prev) => [`Imported ${name} (${size} bytes)`, ...prev].slice(0, 6));
+    } else {
+      setLogs((prev) => ['Imported file', ...prev].slice(0, 6));
+    }
+  };
+  const resetToDefault = async () => {
     setCode(defaultCode);
     setOverrides({});
-    setOutput(evaluateTsx(defaultCode, {}));
+    await evaluateAndSet(defaultCode, {});
   };
   const triggerImport = () => fileInputRef.current?.click();
   const exportTsx = () => {
@@ -376,7 +557,8 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'trammel-codex.tsx';
+    const name = window.prompt('Export filename', 'trammel-codex.tsx') || 'trammel-codex.tsx';
+    link.download = name.endsWith('.tsx') ? name : `${name}.tsx`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -387,7 +569,8 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'trammel-codex.svg';
+    const name = window.prompt('Export filename', 'trammel-codex.svg') || 'trammel-codex.svg';
+    link.download = name.endsWith('.svg') ? name : `${name}.svg`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -395,11 +578,29 @@ export default function App() {
     const file = event.target.files?.[0];
     if (!file) return;
     const text = await file.text();
-    setCode(text);
-    setOverrides({});
-    setOutput(evaluateTsx(text, {}));
-    setLogs((prev) => [`Imported ${file.name} (${file.size} bytes)`, ...prev].slice(0, 6));
+    await runImport(text, file.name, file.size);
     event.target.value = '';
+  };
+
+  const onDrop: React.DragEventHandler<HTMLTextAreaElement> = async (event) => {
+    event.preventDefault();
+    setDropActive(false);
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!/\.(tsx|ts|txt)$/i.test(file.name)) return;
+    const text = await file.text();
+    await runImport(text, file.name, file.size);
+  };
+
+  const onDragOver: React.DragEventHandler<HTMLTextAreaElement> = (event) => {
+    if (event.dataTransfer?.types?.includes('Files')) {
+      event.preventDefault();
+      setDropActive(true);
+    }
+  };
+
+  const onDragLeave: React.DragEventHandler<HTMLTextAreaElement> = () => {
+    setDropActive(false);
   };
   const onKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -418,12 +619,12 @@ export default function App() {
       const stored = store.getCell('files', 'default', 'content');
       if (!cancelled && typeof stored === 'string' && stored.length > 0) {
         setCode(stored);
-        setOutput(evaluateTsx(stored, overrides));
+        await evaluateAndSet(stored, overrides);
         setLogs((prev) => ['Loaded saved file', ...prev].slice(0, 6));
       } else if (!cancelled) {
         store.setRow('files', 'default', { name: 'main.tsx', content: defaultCode });
         setCode(defaultCode);
-        setOutput(evaluateTsx(defaultCode, overrides));
+        await evaluateAndSet(defaultCode, overrides);
         setLogs((prev) => ['Initialized default file', ...prev].slice(0, 6));
       }
       persister.startAutoSave();
@@ -474,7 +675,8 @@ export default function App() {
     let mounted = true;
     setReplicadStatus((prev) => ({ ...prev, state: 'loading' }));
     setLogs((prev) => ['Replicad init: starting', ...prev].slice(0, 6));
-    initReplicad().then((result) => {
+    (async () => {
+      const result = await initReplicad();
       if (!mounted) return;
       if (result.ok) {
         setReplicadStatus({ state: 'ready', ms: result.ms });
@@ -483,7 +685,7 @@ export default function App() {
         setReplicadStatus({ state: 'error', ms: result.ms, error: result.error });
         setLogs((prev) => [`Replicad init: error (${result.error ?? 'unknown'})`, ...prev].slice(0, 6));
       }
-    });
+    })();
     return () => {
       mounted = false;
     };
@@ -503,156 +705,261 @@ export default function App() {
   const wantsReplicad =
     typeof output.vars?.useReplicad === 'boolean' ? output.vars.useReplicad : false;
 
+  const getVarMeta = (value: unknown) => {
+    if (
+      value &&
+      typeof value === 'object' &&
+      'value' in (value as Record<string, unknown>)
+    ) {
+      const meta = value as {
+        value: unknown;
+        options?: unknown[];
+        min?: number;
+        max?: number;
+        step?: number;
+      };
+      return {
+        value: meta.value,
+        options: Array.isArray(meta.options) ? meta.options : undefined,
+        min: typeof meta.min === 'number' ? meta.min : undefined,
+        max: typeof meta.max === 'number' ? meta.max : undefined,
+        step: typeof meta.step === 'number' ? meta.step : undefined,
+      };
+    }
+    return { value };
+  };
+
   return (
-    <div style={styles.app}>
-      <style>
-        {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
-      </style>
-      <header style={styles.header}>
-        <h1 style={styles.title}>trammel codex</h1>
-        <p style={styles.subtitle}>Editor left, SVG viewport right.</p>
-      </header>
-      <main style={styles.main}>
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <h2 style={styles.panelTitle}>Editor</h2>
-            {errorDetails ? (
-              <button
-                type="button"
-                onClick={() => setDiagnosticsTab('error')}
-                style={styles.errorBadge}
-                title="View error details"
-              >
-                <span style={styles.errorDot} />
-                Error
-              </button>
-            ) : null}
-          </div>
+    <ErrorProvider collector={errorCollector}>
+      <div style={styles.app}>
+        <style>
+          {`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}
+        </style>
+        <header style={styles.header}>
+          <h1 style={styles.title}>trammel codex</h1>
+          <p style={styles.subtitle}>Editor left, SVG viewport right.</p>
+        </header>
+        <main style={styles.main}>
+          <section style={styles.panel}>
+            <div style={styles.panelHeader}>
+              <h2 style={styles.panelTitle}>Editor</h2>
+              {errorDetails ? (
+                <button
+                  type="button"
+                  onClick={() => setDiagnosticsTab('error')}
+                  style={styles.errorBadge}
+                  title="View error details"
+                >
+                  <span style={styles.errorDot} />
+                  Error
+                </button>
+              ) : null}
+            </div>
           <textarea
             style={styles.editor}
             value={code}
             onChange={(event) => setCode(event.target.value)}
             onKeyDown={onKeyDown}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
           />
-          <div style={styles.actions}>
-            <button style={styles.button} type="button" onClick={run}>
-              Run (Ctrl+Enter)
-            </button>
-            <button
-              style={{ ...styles.button, background: '#e4e7eb', color: '#1f2933' }}
-              type="button"
-              onClick={resetToDefault}
+          {dropActive ? (
+            <div
+              style={{
+                marginTop: 8,
+                padding: '6px 8px',
+                borderRadius: 6,
+                border: '1px dashed #94a3b8',
+                color: '#475569',
+                fontSize: 12,
+                background: '#f8fafc',
+              }}
             >
-              Reset Demo
-            </button>
-            <button
-              style={{ ...styles.button, background: '#fff', color: '#1f2933' }}
-              type="button"
-              onClick={triggerImport}
-            >
-              Import .tsx
-            </button>
-            <button
-              style={{ ...styles.button, background: '#fff', color: '#1f2933' }}
-              type="button"
-              onClick={exportTsx}
-            >
-              Export .tsx
-            </button>
-            <button
-              style={{ ...styles.button, background: '#fff', color: '#1f2933' }}
-              type="button"
-              onClick={exportSvg}
-              disabled={!svgSource}
-            >
-              Export .svg
-            </button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".tsx,.ts,.txt"
-            style={{ display: 'none' }}
-            onChange={onImportFile}
-          />
-          {varsEntries.length > 0 ? (
-            <div style={{ marginTop: 16 }}>
-              <h3 style={{ margin: '0 0 8px', fontSize: 12, color: '#52606d' }}>Variables</h3>
-              <div style={{ display: 'grid', gap: 8 }}>
+              Drop a .tsx, .ts, or .txt file to import.
+            </div>
+          ) : null}
+            <div style={styles.actions}>
+              <button style={styles.button} type="button" onClick={run}>
+                Run (Ctrl+Enter)
+              </button>
+              <button
+                style={{ ...styles.button, background: '#e4e7eb', color: '#1f2933' }}
+                type="button"
+                onClick={resetToDefault}
+              >
+                Reset Demo
+              </button>
+              <button
+                style={{ ...styles.button, background: '#fff', color: '#1f2933' }}
+                type="button"
+                onClick={triggerImport}
+              >
+                Import .tsx
+              </button>
+              <button
+                style={{ ...styles.button, background: '#fff', color: '#1f2933' }}
+                type="button"
+                onClick={exportTsx}
+              >
+                Export .tsx
+              </button>
+              <button
+                style={{ ...styles.button, background: '#fff', color: '#1f2933' }}
+                type="button"
+                onClick={exportSvg}
+                disabled={!svgSource}
+              >
+                Export .svg
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".tsx,.ts,.txt"
+              style={{ display: 'none' }}
+              onChange={onImportFile}
+            />
+            {varsEntries.length > 0 ? (
+              <div style={{ marginTop: 16 }}>
+                <h3 style={{ margin: '0 0 8px', fontSize: 12, color: '#52606d' }}>Variables</h3>
+                <div style={{ display: 'grid', gap: 8 }}>
                 {varsEntries.map(([key, value]) => {
                   const id = `var-${key}`;
-                  const type = typeof value;
-                  const isColor = type === 'string' && String(value).startsWith('#');
-                  const inputType = isColor ? 'color' : type === 'number' ? 'number' : 'text';
+                  const meta = getVarMeta(value);
+                  const currentValue = overrides[key] ?? meta.value;
+                  const type = typeof currentValue;
+                  const isColor = type === 'string' && String(currentValue).startsWith('#');
+                  const hasOptions = Array.isArray(meta.options) && meta.options.length > 0;
+                  const inputType =
+                    type === 'boolean'
+                      ? 'checkbox'
+                      : hasOptions
+                        ? 'select'
+                        : isColor
+                          ? 'color'
+                          : type === 'number'
+                            ? 'number'
+                            : 'text';
                   return (
                     <label key={key} htmlFor={id} style={{ display: 'grid', gap: 4 }}>
                       <span style={{ fontSize: 12, color: '#52606d' }}>{key}</span>
-                      <input
-                        id={id}
-                        type={inputType}
-                        value={String(overrides[key] ?? value)}
-                        onChange={(event) => {
-                          const nextValue =
-                            inputType === 'number' ? Number(event.target.value) : event.target.value;
-                          const nextOverrides = { ...overrides, [key]: nextValue };
-                          setOverrides(nextOverrides);
-                          setOutput(evaluateTsx(code, nextOverrides));
-                        }}
-                        style={{
-                          border: '1px solid #cbd2d9',
-                          borderRadius: 6,
-                          padding: '6px 8px',
-                          fontSize: 12,
-                        }}
-                      />
+                      {inputType === 'select' ? (
+                        <select
+                          id={id}
+                          value={String(currentValue)}
+                          onChange={(event) => {
+                            const selected = meta.options?.find(
+                              (option) => String(option) === event.target.value
+                            );
+                            const nextOverrides = { ...overrides, [key]: selected };
+                            setOverrides(nextOverrides);
+                            evaluateAndSet(code, nextOverrides);
+                          }}
+                          style={{
+                            border: '1px solid #cbd2d9',
+                            borderRadius: 6,
+                            padding: '6px 8px',
+                            fontSize: 12,
+                          }}
+                        >
+                          {(meta.options ?? []).map((option) => (
+                            <option key={String(option)} value={String(option)}>
+                              {String(option)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          id={id}
+                          type={inputType}
+                          value={
+                            inputType === 'checkbox' ? undefined : String(currentValue ?? '')
+                          }
+                          checked={
+                            inputType === 'checkbox' ? Boolean(currentValue) : undefined
+                          }
+                          min={inputType === 'number' ? meta.min : undefined}
+                          max={inputType === 'number' ? meta.max : undefined}
+                          step={inputType === 'number' ? meta.step : undefined}
+                          onChange={(event) => {
+                            let nextValue: unknown;
+                            if (inputType === 'number') {
+                              nextValue = Number(event.target.value);
+                            } else if (inputType === 'checkbox') {
+                              nextValue = event.target.checked;
+                            } else {
+                              nextValue = event.target.value;
+                            }
+                            const nextOverrides = { ...overrides, [key]: nextValue };
+                            setOverrides(nextOverrides);
+                            evaluateAndSet(code, nextOverrides);
+                          }}
+                          style={{
+                            border: '1px solid #cbd2d9',
+                            borderRadius: 6,
+                            padding: '6px 8px',
+                            fontSize: 12,
+                          }}
+                        />
+                      )}
                     </label>
                   );
                 })}
+                </div>
+              </div>
+            ) : null}
+          </section>
+          <section style={styles.panel}>
+            <div style={styles.panelHeader}>
+              <h2 style={styles.panelTitle}>Viewport</h2>
+              <div style={styles.tabs}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('visual')}
+                  style={{
+                    ...styles.tabButton,
+                    ...(activeTab === 'visual' ? styles.tabButtonActive : null),
+                  }}
+                >
+                  Visual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('source')}
+                  style={{
+                    ...styles.tabButton,
+                    ...(activeTab === 'source' ? styles.tabButtonActive : null),
+                  }}
+                >
+                  Source
+                </button>
               </div>
             </div>
-          ) : null}
-        </section>
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <h2 style={styles.panelTitle}>Viewport</h2>
-            <div style={styles.tabs}>
-              <button
-                type="button"
-                onClick={() => setActiveTab('visual')}
-                style={{
-                  ...styles.tabButton,
-                  ...(activeTab === 'visual' ? styles.tabButtonActive : null),
-                }}
-              >
-                Visual
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('source')}
-                style={{
-                  ...styles.tabButton,
-                  ...(activeTab === 'source' ? styles.tabButtonActive : null),
-                }}
-              >
-                Source
-              </button>
-            </div>
-          </div>
-          <div style={styles.viewport} ref={viewportRef}>
-            {activeTab === 'visual' ? (
-              wantsReplicad && replicadStatus.state !== 'ready' ? (
-                <ReplicadGate ready={false}>{rendered}</ReplicadGate>
+            <div style={styles.viewport} ref={viewportRef}>
+              {activeTab === 'visual' ? (
+                <ErrorBoundary
+                  fallback={<div>Render error.</div>}
+                  onError={(err) => {
+                    setErrorDetails(err.message);
+                    setDiagnosticsTab('error');
+                  }}
+                  resetKey={code}
+                >
+                  {wantsReplicad && replicadStatus.state !== 'ready' ? (
+                    <ReplicadGate ready={false}>{rendered}</ReplicadGate>
+                  ) : (
+                    rendered
+                  )}
+                </ErrorBoundary>
               ) : (
-                rendered
-              )
-            ) : (
-              <pre style={styles.source}>{svgSource || 'No SVG rendered yet.'}</pre>
-            )}
-          </div>
-          <div style={styles.footer}>
-            {activeTab === 'visual' ? 'Rendered from eval output.' : 'Serialized SVG source.'}
-          </div>
-          <div style={styles.diagnostics}>
+                <pre style={styles.source}>{svgSource || 'No SVG rendered yet.'}</pre>
+              )}
+            </div>
+            <div style={styles.footer}>
+              {activeTab === 'visual' ? 'Rendered from eval output.' : 'Serialized SVG source.'}
+            </div>
+            <div style={styles.diagnostics}>
             <h3 style={styles.diagTitle}>Diagnostics</h3>
             <div style={styles.diagTabs}>
               <button
@@ -732,8 +1039,9 @@ export default function App() {
               </div>
             )}
           </div>
-        </section>
-      </main>
-    </div>
+          </section>
+        </main>
+      </div>
+    </ErrorProvider>
   );
 }

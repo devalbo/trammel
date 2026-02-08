@@ -39,9 +39,19 @@ Goal: deliver a working Codex trammel app quickly, then expand to full spec.
 9. Implement variable extraction + simple control panel.
 10. Validate export/import of `.svg` and `.tsx`.
 
-## Next Up (Concrete Tasks)
-1. Codex editor shell: textarea + Ctrl/Cmd+Enter to run (no CodeMirror yet).
-2. Eval pipeline: Sucrase TSX -> JS, `new Function` with React + vars in scope.
-3. SVG viewport with Visual + Source tabs, XMLSerializer for source view.
-4. Error panel wired to capture syntax/eval errors without crashing the app.
-5. TinyBase `files` store with localStorage persister (single file).
+## Completed (2026-02-07)
+- Editor shell with Ctrl/Cmd+Enter run.
+- Sucrase + `new Function` eval pipeline with scoped helpers.
+- Visual/Source viewport with XML serialization.
+- Error panel + diagnostics for eval errors.
+- TinyBase store + localStorage persister (`trammel-codex`).
+- Error collector + render error boundary (minimal, eval/syntax/render).
+- Expanded constraints surface to match DESIGN.md (core geometry + alignment + distribute + mirror + arc + svg helpers).
+- Variable controls schema: booleans + select options + number min/max/step support.
+- Smoke tests for eval + serialization + persistence.
+- Import/export polish: filename prompts + drag/drop import.
+
+## Next Tasks
+1. Add export of `.svg` + `.tsx` prompts to include suggested default names per project name (optional).
+2. Add UI toggle + status indicator for `VITE_USE_ESBUILD_EVAL` eval path (optional).
+3. Add tests for esbuild eval path smoke (guarded, or skipped in JSDOM).
