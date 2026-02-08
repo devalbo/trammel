@@ -1,0 +1,83 @@
+# 053 — Hexagonal Tile Grid
+
+[Back to Implementation Plan](../IMPLEMENTATIONS.md)
+
+## Description
+
+A honeycomb pattern of hexagons tiled edge-to-edge. Each row is offset by half a hex width. Uses vertex anchors and CalcValue for positioning. Parametric rows, columns, and hex size.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Polygon sides={6}>` x N | Primitive | Hex tiles |
+
+## Constraints Used
+
+- CalcValue position functions computing row/column offsets
+- Parametric variables for grid dimensions
+- Hex geometry: column offset = `1.5 * r`, row offset = `apothem * 2`, odd-row shift = `0.75 * r`
+
+## Syntax
+
+```jsx
+<Sprite
+  viewBox="0 0 400 300"
+  vars={{ cols: 5, rows: 4, hexSize: 25 }}
+>
+  {Array.from({ length: vars.rows }, (_, row) =>
+    Array.from({ length: vars.cols }, (_, col) => {
+      const r = vars.hexSize;
+      const apothem = r * Math.sqrt(3) / 2;
+      const colSpacing = r * 1.5;
+      const rowSpacing = apothem * 2;
+      const xOffset = row % 2 === 1 ? colSpacing / 2 : 0;
+
+      return (
+        <Polygon
+          key={`${row}_${col}`}
+          id={`hex_${row}_${col}`}
+          sides={6}
+          r={r}
+          centerX={r + col * colSpacing + xOffset}
+          centerY={apothem + row * rowSpacing}
+          fill={row % 2 === col % 2 ? "#1abc9c" : "#16a085"}
+          stroke="#0e6655"
+          strokeWidth={1}
+        />
+      );
+    })
+  ).flat()}
+</Sprite>
+```
+
+## Hex Tiling Geometry
+
+For flat-bottom hexagons with circumradius `r`:
+- Column spacing (center-to-center) = `1.5 * r`
+- Row spacing = `2 * apothem` = `r * sqrt(3)`
+- Odd rows offset by `0.75 * r` (half a column spacing)
+
+This creates a tight honeycomb with shared edges between adjacent hexes.
+
+## With Vertex Snapping (Alternative)
+
+Instead of computing positions mathematically, you can snap hex vertices together:
+
+```jsx
+{/* First hex: positioned absolutely */}
+<Polygon id="hex_0_0" sides={6} r={25} centerX={25} centerY={21.65} />
+
+{/* Second hex: snapped so its v4 touches first hex's v1 */}
+<Polygon id="hex_0_1" sides={6} r={25}
+  centerX={(ctx) => ctx.get('hex_0_0').cx + 25 * 1.5}
+  centerY="#hex_0_0.centerY" />
+```
+
+## What This Validates
+
+- Polygon tiling with computed offsets
+- Parametric grid dimensions
+- Hex-specific geometry (apothem, column/row spacing)
+- Dynamic id generation for grid elements
+- Both computed and vertex-snapped approaches work

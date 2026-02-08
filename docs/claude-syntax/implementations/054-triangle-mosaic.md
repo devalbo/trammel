@@ -1,0 +1,92 @@
+# 054 — Triangle Mosaic
+
+[Back to Implementation Plan](../IMPLEMENTATIONS.md)
+
+## Description
+
+A band of alternating up-pointing and down-pointing equilateral triangles that tile edge-to-edge. Every other triangle is flipped using `baseAngle={180}`. The triangles share edges via vertex snapping.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Triangle kind="equilateral">` x N | Primitive | Alternating up/down triangles |
+
+## Constraints Used
+
+- `baseAngle={0}` for up-pointing, `baseAngle={180}` for down-pointing
+- CalcValue or vertex references for tight tiling
+- Parametric count and size
+
+## Syntax
+
+```jsx
+<Sprite
+  viewBox="0 0 400 120"
+  vars={{ count: 8, triSize: 50 }}
+>
+  {Array.from({ length: vars.count }, (_, i) => {
+    const s = vars.triSize;
+    const h = s * Math.sqrt(3) / 2;
+    const isDown = i % 2 === 1;
+
+    return (
+      <Triangle
+        key={i}
+        id={`tri_${i}`}
+        kind="equilateral"
+        sideLength={s}
+        baseAngle={isDown ? 180 : 0}
+        x={i * (s / 2)}
+        y={isDown ? 10 : 10}
+        fill={isDown ? "#3498db" : "#e74c3c"}
+        stroke="#2c3e50"
+        strokeWidth={1}
+      />
+    );
+  })}
+</Sprite>
+```
+
+## Tiling Geometry
+
+For equilateral triangles with side `s`:
+- Triangle height = `s * sqrt(3) / 2`
+- Each triangle occupies `s/2` horizontal space in the tiling
+- Up triangles: base at bottom, apex at top
+- Down triangles: base at top (baseAngle=180), apex at bottom
+- Adjacent triangles share an edge
+
+```
+  /\  /\  /\  /\
+ /  \/  \/  \/  \
+```
+
+## With Vertex Snapping (Alternative)
+
+```jsx
+{/* First triangle: up-pointing */}
+<Triangle id="tri_0" kind="equilateral" sideLength={50}
+  x={0} y={10} baseAngle={0} fill="#e74c3c" />
+
+{/* Second triangle: down-pointing, v2 snapped to tri_0's v1 */}
+<Triangle id="tri_1" kind="equilateral" sideLength={50}
+  baseAngle={180}
+  x="#tri_0.v1.x - 25"
+  y="#tri_0.v0.y - 43.3"
+  fill="#3498db" />
+
+{/* Third triangle: up-pointing, its v0 = tri_1's v1 */}
+<Triangle id="tri_2" kind="equilateral" sideLength={50}
+  baseAngle={0}
+  centerX="#tri_1.v1.x"
+  y="#tri_0.y"
+  fill="#e74c3c" />
+```
+
+## What This Validates
+
+- `baseAngle={180}` flips a triangle upside-down
+- Alternating orientation creates a tight mosaic
+- Vertex references enable exact edge-to-edge tiling
+- Parametric `count` and `triSize` control the pattern

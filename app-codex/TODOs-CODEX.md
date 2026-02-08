@@ -50,6 +50,7 @@ Goal: deliver a working Codex trammel app quickly, then expand to full spec.
 - Variable controls schema: booleans + select options + number min/max/step support.
 - Smoke tests for eval + serialization + persistence.
 - Import/export polish: filename prompts + drag/drop import.
+- Added selectable demo library in editor (constraints examples).
 
 ## Next Tasks
 1. Add export of `.svg` + `.tsx` prompts to include suggested default names per project name (optional).

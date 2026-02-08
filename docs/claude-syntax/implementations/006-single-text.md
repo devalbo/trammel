@@ -1,0 +1,53 @@
+# 006 — Single Text
+
+[Back to Implementation Plan](../IMPLEMENTATIONS.md)
+
+## Description
+
+A text label with explicit position and font properties. Tests text rendering and bounding box computation for text elements.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Sprite>` | Container | Root SVG viewBox |
+| `<Text>` | Primitive | Text label |
+
+## Props Exercised
+
+- `id`, `x`, `y` — Position
+- `fontSize`, `fontFamily`, `fontWeight` — Typography
+- `fill`, `textAnchor` — Presentation
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 80">
+  <Text
+    id="label"
+    x={100}
+    y={45}
+    fontSize={18}
+    fontFamily="Arial, sans-serif"
+    fontWeight="bold"
+    fill="#333"
+    textAnchor="middle"
+  >
+    PLATE A
+  </Text>
+</Sprite>
+```
+
+## Expected SVG Output
+
+```svg
+<svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
+  <text x="100" y="45" font-size="18" font-family="Arial, sans-serif" font-weight="bold" fill="#333" text-anchor="middle">PLATE A</text>
+</svg>
+```
+
+## What This Validates
+
+- Text renders children as SVG `<text>` content
+- Font properties map to SVG attributes (camelCase → kebab-case)
+- `textAnchor` maps to SVG `text-anchor`

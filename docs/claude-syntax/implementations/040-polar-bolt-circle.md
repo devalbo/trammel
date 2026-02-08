@@ -1,0 +1,72 @@
+# 040 — Polar Bolt Circle
+
+[Back to Implementation Plan](../IMPLEMENTATIONS.md)
+
+## Description
+
+Bolts arranged in a circle around a central hub using polar constraints with parametric count and radius. Each bolt position is computed from `360 / count * i` degrees.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Circle>` #hub | Primitive | Central hub |
+| `<Circle>` (bolts) x N | Primitive | Polar-positioned |
+
+## Constraints Used
+
+- Polar position: `center`, `radius`, `angle`
+- Parametric angle calculation: `(360 / count) * i`
+- Variables: `boltCount`, `boltCircleRadius`, `boltRadius`
+
+## Syntax
+
+```jsx
+<Sprite
+  viewBox="0 0 200 200"
+  vars={{ boltCount: 6, boltCircleRadius: 60, boltRadius: 6 }}
+>
+  {/* Hub */}
+  <Circle id="hub" centerX={100} centerY={100} r={15}
+    fill="#888" stroke="#333" strokeWidth={2} />
+
+  {/* Bolt circle (construction geometry) */}
+  <Circle id="boltCircle" centerX={100} centerY={100}
+    r={(ctx) => ctx.vars.boltCircleRadius}
+    fill="none" stroke="#ccc" strokeWidth={0.5}
+    style={{ strokeDasharray: "3 3" }} />
+
+  {/* Bolts */}
+  {Array.from({ length: vars.boltCount }, (_, i) => (
+    <Circle
+      key={i}
+      id={`bolt_${i}`}
+      pos={{
+        type: 'polar',
+        center: '#hub',
+        radius: vars.boltCircleRadius,
+        angle: (360 / vars.boltCount) * i
+      }}
+      r={vars.boltRadius}
+      fill="white"
+      stroke="#333"
+      strokeWidth={1}
+    />
+  ))}
+</Sprite>
+```
+
+## With boltCount = 6
+
+Bolts at 0, 60, 120, 180, 240, 300 degrees.
+
+## With boltCount = 8
+
+Bolts at 0, 45, 90, 135, 180, 225, 270, 315 degrees.
+
+## What This Validates
+
+- Polar constraint with parametric angle
+- `Array.from` + polar creates circular patterns
+- Construction geometry (dashed bolt circle) for visual reference
+- Changing any variable recomputes the entire pattern

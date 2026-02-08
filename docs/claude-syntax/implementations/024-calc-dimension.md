@@ -1,0 +1,56 @@
+# 024 — CalcValue Dimension
+
+[Back to Implementation Plan](../IMPLEMENTATIONS.md)
+
+## Description
+
+A rect whose width is computed from a function that reads another shape's resolved geometry via the solver context.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Rect>` #source | Primitive | Reference shape |
+| `<Rect>` #derived | Primitive | Width computed by CalcValue |
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 300 120">
+  <Rect id="source" x={10} y={20} width={120} height={60} fill="#4a90d9" />
+
+  <Rect
+    id="derived"
+    left="#source.right + 20"
+    top="#source.top"
+    dim={{
+      type: 'calc',
+      w: (ctx) => ctx.get('source').w * 0.5 + 10,
+      h: (ctx) => ctx.get('source').h
+    }}
+    fill="#2ecc71"
+  />
+</Sprite>
+```
+
+## Resolver Trace
+
+1. source: `{ x: 10, y: 20, w: 120, h: 60 }`
+2. derived width: `ctx.get('source').w * 0.5 + 10` = `120 * 0.5 + 10` = 70
+3. derived height: `ctx.get('source').h` = 60
+4. derived left: `#source.right + 20` = 130 + 20 = 150
+
+## Expected SVG Output
+
+```svg
+<svg viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="20" width="120" height="60" fill="#4a90d9" />
+  <rect x="150" y="20" width="70" height="60" fill="#2ecc71" />
+</svg>
+```
+
+## What This Validates
+
+- CalcValue functions receive SolverContext and can read other shapes
+- `ctx.get(id)` returns the resolved BoundingBox of another shape
+- CalcValue can express arbitrary arithmetic not possible in reference strings

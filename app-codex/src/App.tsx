@@ -6,7 +6,7 @@ import esbuildWasmUrl from 'esbuild-wasm/esbuild.wasm?url';
 import { createTrammelPersister, createTrammelStore } from './store';
 import * as constraints from './constraints';
 import { initReplicad } from './replicad/init';
-import { draw } from 'replicad';
+import { draw, drawRectangle, drawRoundedRectangle } from 'replicad';
 import { ErrorBoundary, ErrorCollector, ErrorProvider } from './errors';
 
 const styles = {
@@ -209,7 +209,156 @@ const styles = {
   },
 };
 
-const defaultCode = `// trammel codex demo\nconst vars = {\n  width: 320,\n  height: 160,\n  cornerRadius: 18,\n  panel: '#f2f4f7',\n  accent: '#2563eb',\n  inset: 14,\n  useReplicad: false,\n};\n\nconst panel: Rect = { x: 0, y: 0, width: vars.width, height: vars.height };\nconst inner = insetRect(panel, vars.inset);\nconst badge = rectCorner(inner, 'topRight');\n\nconst Panel = () => (\n  <g>\n    <rect\n      x={panel.x}\n      y={panel.y}\n      width={panel.width}\n      height={panel.height}\n      rx={vars.cornerRadius}\n      fill={vars.panel}\n      stroke="#0f172a"\n      strokeWidth={2}\n    />\n    <circle cx={panel.width * 0.18} cy={panel.height * 0.5} r={22} fill={vars.accent} />\n    <rect\n      x={inner.x + 12}\n      y={inner.y + 28}\n      width={inner.width * 0.6}\n      height={inner.height * 0.4}\n      rx={12}\n      fill="#e2e8f0"\n      stroke="#0f172a"\n      strokeWidth={1.5}\n    />\n    <circle cx={badge.x - 16} cy={badge.y + 16} r={8} fill={vars.accent} />\n  </g>\n);\n\nconst ReplicadPanel = () => {\n  if (!vars.useReplicad) return null;\n  const path = draw()\n    .rect(vars.width, vars.height)\n    .chamfer(6)\n    .toSVGPaths()[0];\n  return <path d={path} fill=\"none\" stroke=\"#0f172a\" strokeWidth={2} />;\n};\n\nconst Root = () => (\n  <svg viewBox={\`-10 -10 \${vars.width + 20} \${vars.height + 20}\`}>\n    <Panel />\n    <ReplicadPanel />\n  </svg>\n);\n`;
+const defaultCode = `// trammel codex demo
+const vars = {
+  width: 320,
+  height: 160,
+  cornerRadius: 18,
+  panel: '#f2f4f7',
+  accent: '#2563eb',
+  inset: 14,
+};
+
+const panel: Rect = { x: 0, y: 0, width: vars.width, height: vars.height };
+const inner = insetRect(panel, vars.inset);
+const badge = rectCorner(inner, 'topRight');
+
+const Panel = () => (
+  <g>
+    <rect
+      x={panel.x}
+      y={panel.y}
+      width={panel.width}
+      height={panel.height}
+      rx={vars.cornerRadius}
+      fill={vars.panel}
+      stroke="#0f172a"
+      strokeWidth={2}
+    />
+    <circle cx={panel.width * 0.18} cy={panel.height * 0.5} r={22} fill={vars.accent} />
+    <rect
+      x={inner.x + 12}
+      y={inner.y + 28}
+      width={inner.width * 0.6}
+      height={inner.height * 0.4}
+      rx={12}
+      fill="#e2e8f0"
+      stroke="#0f172a"
+      strokeWidth={1.5}
+    />
+    <circle cx={badge.x - 16} cy={badge.y + 16} r={8} fill={vars.accent} />
+  </g>
+);
+
+const ReplicadPanel = () => {
+  const path = drawRoundedRectangle(vars.width, vars.height, 6).toSVGPaths()[0];
+  return <path d={path} fill="none" stroke="#0f172a" strokeWidth={2} />;
+};
+
+const Root = () => (
+  <svg viewBox={\`-10 -10 \${vars.width + 20} \${vars.height + 20}\`}>
+    <Panel />
+    <ReplicadPanel />
+  </svg>
+);
+`;
+
+const demoLibrary = [
+  {
+    id: 'basic-panel',
+    label: 'Basic Panel',
+    code: defaultCode,
+  },
+  {
+    id: 'align-distribute',
+    label: 'Align + Distribute',
+    code: `const vars = { width: 360, height: 160 };
+
+const panel: Rect = { x: 0, y: 0, width: vars.width, height: vars.height };
+const dots = distributeAlongEdge(panel, 'top', 5);
+
+const Root = () => (
+  <svg viewBox={\`-10 -10 \${vars.width + 20} \${vars.height + 20}\`}>
+    <rect {...panel} fill="#f1f5f9" stroke="#0f172a" strokeWidth={2} />
+    {dots.map((p, i) => (
+      <circle key={i} cx={p.x} cy={p.y - 12} r={6} fill="#2563eb" />
+    ))}
+  </svg>
+);
+`,
+  },
+  {
+    id: 'concentric-mirror',
+    label: 'Concentric + Mirror',
+    code: `const vars = { width: 280, height: 180 };
+
+const panel: Rect = { x: 0, y: 0, width: vars.width, height: vars.height };
+const center = rectCenter(panel);
+const baseCircle: Circle = { cx: center.x - 40, cy: center.y, r: 20 };
+const axis: Line = { from: { x: center.x, y: 0 }, to: { x: center.x, y: vars.height } };
+const mirror = mirrorCircle(baseCircle, axis);
+
+const Root = () => (
+  <svg viewBox={\`-10 -10 \${vars.width + 20} \${vars.height + 20}\`}>
+    <rect {...panel} fill="#fff7ed" stroke="#7c2d12" strokeWidth={2} />
+    <circle cx={baseCircle.cx} cy={baseCircle.cy} r={baseCircle.r} fill="#fb923c" />
+    <circle cx={mirror.cx} cy={mirror.cy} r={mirror.r} fill="#fb923c" />
+  </svg>
+);
+`,
+  },
+  {
+    id: 'grid-positions',
+    label: 'Grid Positions',
+    code: `const vars = { cols: 4, rows: 3, cell: 36 };
+
+const points = gridPositions(vars.rows, vars.cols, vars.cell, vars.cell, 10, 10, { x: 20, y: 20 });
+
+const Root = () => (
+  <svg viewBox="0 0 220 160">
+    {points.map((p, i) => (
+      <rect key={i} x={p.x} y={p.y} width={vars.cell} height={vars.cell} fill="#e2e8f0" stroke="#0f172a" />
+    ))}
+  </svg>
+);
+`,
+  },
+  {
+    id: 'arc-corner',
+    label: 'Arc In Corner',
+    code: `const vars = { width: 260, height: 160, r: 24 };
+const panel: Rect = { x: 0, y: 0, width: vars.width, height: vars.height };
+const arc = arcInCorner(vars.r, panel, 'topRight');
+
+const Root = () => (
+  <svg viewBox={\`-10 -10 \${vars.width + 20} \${vars.height + 20}\`}>
+    <rect {...panel} fill="#f8fafc" stroke="#0f172a" strokeWidth={2} />
+    <path d={arcToSVGPath(arc)} stroke="#2563eb" strokeWidth={3} fill="none" />
+  </svg>
+);
+`,
+  },
+  {
+    id: 'tangent-lines',
+    label: 'Tangent Lines',
+    code: `const vars = { cx: 120, cy: 90, r: 30 };
+const circle: Circle = { cx: vars.cx, cy: vars.cy, r: vars.r };
+const point: Point = { x: 220, y: 40 };
+const tangents = tangentLineToCircle(circle, point);
+
+const Root = () => (
+  <svg viewBox="0 0 260 180">
+    <circle cx={circle.cx} cy={circle.cy} r={circle.r} fill="#e0f2fe" stroke="#0f172a" />
+    <circle cx={point.x} cy={point.y} r={4} fill="#ef4444" />
+    {tangents.map((l, i) => (
+      <path key={i} d={lineToSVGPath(l)} stroke="#ef4444" strokeWidth={2} fill="none" />
+    ))}
+  </svg>
+);
+`,
+  },
+];
+
 
 type EvalResult = {
   element: React.ReactElement | null;
@@ -229,46 +378,6 @@ async function ensureEsbuildReady() {
     });
   }
   await esbuildInit;
-}
-
-function ReplicadGate({
-  ready,
-  children,
-}: {
-  ready: boolean;
-  children: React.ReactNode;
-}) {
-  if (!ready) {
-    return (
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '6px 10px',
-          borderRadius: 999,
-          border: '1px solid #cbd2d9',
-          background: '#f8fafc',
-          color: '#52606d',
-          fontSize: 12,
-        }}
-      >
-        <span
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            border: '2px solid #cbd2d9',
-            borderTopColor: '#1f2933',
-            display: 'inline-block',
-            animation: 'spin 1s linear infinite',
-          }}
-        />
-        Replicad loading…
-      </div>
-    );
-  }
-  return <>{children}</>;
 }
 
 function prettyPrintXml(source: string) {
@@ -302,7 +411,8 @@ function prettyPrintXml(source: string) {
 function evaluateTsx(
   source: string,
   overrides: Record<string, unknown>,
-  collector: ErrorCollector | null
+  collector: ErrorCollector | null,
+  replicadReady: boolean
 ): EvalResult {
   try {
     const start = performance.now();
@@ -337,12 +447,102 @@ function evaluateTsx(
       const {
         rectCenter,
         rectCorner,
+        rectEdge,
+        rectEdgeMidpoint,
         insetRect,
         alignCenterX,
         alignCenterY,
+        alignEdge,
+        alignFlush,
         distributeEvenly,
+        distributeAlongEdge,
+        gridPositions,
+        distributeOnCircle,
+        offsetPoint,
+        parallelLine,
+        offsetCircle,
+        coincident,
+        centerAtPoint,
+        centerAtCorner,
+        centerAtEdgeMidpoint,
+        concentric,
+        collinear,
+        parallel,
+        parallelThrough,
+        perpendicular,
+        perpendicularThrough,
+        perpendicularAt,
+        horizontal,
+        vertical,
+        horizontalDistance,
+        verticalDistance,
+        midpoint,
+        nearestPointOnLine,
+        nearestPointOnCircle,
+        nearestPointOnArc,
+        pointOnLineAt,
+        pointOnCircleAt,
+        pointOnArcAt,
+        angleBetween,
+        rotateToAngle,
+        arcTangentToLines,
+        arcInCorner,
+        arcBetween,
+        filletArc,
+        tangentLineToCircle,
+        tangentLineBetweenCircles,
+        tangentCircleToLine,
+        tangentCircleToCircles,
+        pointOfTangency,
+        equalLength,
+        equalRadius,
+        mirrorPoint,
+        mirrorLine,
+        mirrorCircle,
+        mirrorRect,
+        mirrorPointAbout,
+        distanceBetween,
+        distancePointToLine,
+        distancePointToCircle,
+        lineLength,
+        lineAngle,
+        lineDirection,
+        lineLineIntersection,
+        lineCircleIntersection,
+        circleCircleIntersection,
+        lineRectIntersection,
+        arcToSVGPath,
+        lineToSVGPath,
+        rectToSVGPath,
+        circleToSVGPath,
+        pathFromPoints,
       } = constraints;
-      const draw = replicad.draw;
+      const __trammelDraw = ${replicadReady ? 'replicad.draw' : 'null'};
+      const drawRoundedRectangle = ${replicadReady ? '(typeof replicad.drawRoundedRectangle === "function" ? replicad.drawRoundedRectangle : (() => ({ toSVGPaths() { return [""]; } })))' : '(() => ({ toSVGPaths() { return [""]; } }))'};
+      const drawRectangle = ${replicadReady ? '(typeof replicad.drawRectangle === "function" ? replicad.drawRectangle : (() => ({ toSVGPaths() { return [""]; } })))' : '(() => ({ toSVGPaths() { return [""]; } }))'};
+      const draw = () => {
+        const stub = () => ({
+          rect() {
+            return {
+              chamfer() {
+                return {
+                  toSVGPaths() {
+                    return [""];
+                  },
+                };
+              },
+            };
+          },
+        });
+        if (typeof __trammelDraw !== 'function') return stub();
+        try {
+          const result = __trammelDraw();
+          if (!result || typeof result.rect !== 'function') return stub();
+          return result;
+        } catch {
+          return stub();
+        }
+      };
       ${code}
       if (typeof vars === 'object' && vars !== null) {
         Object.assign(vars, overrides ?? {});
@@ -357,21 +557,31 @@ function evaluateTsx(
       return { element, vars: capturedVars };
     `;
 
-    const factory = new Function(
-      'React',
-      'ReactJsxRuntime',
-      'constraints',
-      'replicad',
-      'overrides',
+      const factory = new Function(
+        'React',
+        'ReactJsxRuntime',
+        'constraints',
+        'replicad',
+        'overrides',
       wrapped
     ) as (
       react: typeof React,
       jsxRuntime: typeof ReactJsxRuntime,
       helpers: typeof constraints,
-      replicad: { draw: typeof draw },
+      replicad: {
+        draw: typeof draw;
+        drawRectangle: typeof drawRectangle;
+        drawRoundedRectangle: typeof drawRoundedRectangle;
+      },
       overrides: Record<string, unknown>
     ) => { element: React.ReactElement | null; vars: Record<string, unknown> };
-    const result = factory(React, ReactJsxRuntime, constraints, { draw }, overrides);
+    const result = factory(
+      React,
+      ReactJsxRuntime,
+      constraints,
+      { draw, drawRectangle, drawRoundedRectangle },
+      overrides
+    );
     const evalMs = performance.now() - start;
     return { element: result.element, vars: result.vars, error: null, evalMs };
   } catch (err) {
@@ -389,7 +599,8 @@ function evaluateTsx(
 async function evaluateTsxEsbuild(
   source: string,
   overrides: Record<string, unknown>,
-  collector: ErrorCollector | null
+  collector: ErrorCollector | null,
+  replicadReady: boolean
 ): Promise<EvalResult> {
   const start = performance.now();
   collector?.clear();
@@ -400,8 +611,16 @@ async function evaluateTsxEsbuild(
       ReactJsxRuntime;
     (window as Window & { __TRAMMEL_CONSTRAINTS__?: typeof constraints }).__TRAMMEL_CONSTRAINTS__ =
       constraints;
-    (window as Window & { __TRAMMEL_REPLICAD__?: { draw: typeof draw } }).__TRAMMEL_REPLICAD__ = {
+    (window as Window & {
+      __TRAMMEL_REPLICAD__?: {
+        draw: typeof draw;
+        drawRectangle: typeof drawRectangle;
+        drawRoundedRectangle: typeof drawRoundedRectangle;
+      };
+    }).__TRAMMEL_REPLICAD__ = {
       draw,
+      drawRectangle,
+      drawRoundedRectangle,
     };
     (window as Window & { __TRAMMEL_OVERRIDES__?: Record<string, unknown> }).__TRAMMEL_OVERRIDES__ =
       overrides;
@@ -410,7 +629,106 @@ async function evaluateTsxEsbuild(
 const React = window.__TRAMMEL_REACT__;
 const constraints = window.__TRAMMEL_CONSTRAINTS__;
 const replicad = window.__TRAMMEL_REPLICAD__;
+const __trammelDraw = ${replicadReady ? 'replicad.draw' : 'null'};
+const drawRoundedRectangle = ${replicadReady ? '(typeof replicad.drawRoundedRectangle === "function" ? replicad.drawRoundedRectangle : (() => ({ toSVGPaths() { return [""]; } })))' : '(() => ({ toSVGPaths() { return [""]; } }))'};
+const drawRectangle = ${replicadReady ? '(typeof replicad.drawRectangle === "function" ? replicad.drawRectangle : (() => ({ toSVGPaths() { return [""]; } })))' : '(() => ({ toSVGPaths() { return [""]; } }))'};
+const draw = () => {
+  const stub = () => ({
+    rect() {
+      return {
+        chamfer() {
+          return {
+            toSVGPaths() {
+              return [""];
+            },
+          };
+        },
+      };
+    },
+  });
+  if (typeof __trammelDraw !== 'function') return stub();
+  try {
+    const result = __trammelDraw();
+    if (!result || typeof result.rect !== 'function') return stub();
+    return result;
+  } catch {
+    return stub();
+  }
+};
 const overrides = window.__TRAMMEL_OVERRIDES__;
+const {
+  rectCenter,
+  rectCorner,
+  rectEdge,
+  rectEdgeMidpoint,
+  insetRect,
+  alignCenterX,
+  alignCenterY,
+  alignEdge,
+  alignFlush,
+  distributeEvenly,
+  distributeAlongEdge,
+  gridPositions,
+  distributeOnCircle,
+  offsetPoint,
+  parallelLine,
+  offsetCircle,
+  coincident,
+  centerAtPoint,
+  centerAtCorner,
+  centerAtEdgeMidpoint,
+  concentric,
+  collinear,
+  parallel,
+  parallelThrough,
+  perpendicular,
+  perpendicularThrough,
+  perpendicularAt,
+  horizontal,
+  vertical,
+  horizontalDistance,
+  verticalDistance,
+  midpoint,
+  nearestPointOnLine,
+  nearestPointOnCircle,
+  nearestPointOnArc,
+  pointOnLineAt,
+  pointOnCircleAt,
+  pointOnArcAt,
+  angleBetween,
+  rotateToAngle,
+  arcTangentToLines,
+  arcInCorner,
+  arcBetween,
+  filletArc,
+  tangentLineToCircle,
+  tangentLineBetweenCircles,
+  tangentCircleToLine,
+  tangentCircleToCircles,
+  pointOfTangency,
+  equalLength,
+  equalRadius,
+  mirrorPoint,
+  mirrorLine,
+  mirrorCircle,
+  mirrorRect,
+  mirrorPointAbout,
+  distanceBetween,
+  distancePointToLine,
+  distancePointToCircle,
+  lineLength,
+  lineAngle,
+  lineDirection,
+  lineLineIntersection,
+  lineCircleIntersection,
+  circleCircleIntersection,
+  lineRectIntersection,
+  arcToSVGPath,
+  lineToSVGPath,
+  rectToSVGPath,
+  circleToSVGPath,
+  pathFromPoints,
+} = constraints;
     `.trim();
     const postlude = `
 if (typeof vars === 'object' && vars !== null) {
@@ -496,9 +814,13 @@ export default function App() {
   const [code, setCode] = useState(defaultCode);
   const [overrides, setOverrides] = useState<Record<string, unknown>>({});
   const [output, setOutput] = useState<EvalResult>(() =>
-    useEsbuildEval ? { element: null, vars: {}, error: null, evalMs: 0 } : evaluateTsx(defaultCode, {}, errorCollector)
+    useEsbuildEval
+      ? { element: null, vars: {}, error: null, evalMs: 0 }
+      : evaluateTsx(defaultCode, {}, errorCollector, false)
   );
+  const [selectedDemoId, setSelectedDemoId] = useState(demoLibrary[0]?.id ?? 'basic-panel');
   const evalTokenRef = React.useRef(0);
+  const lastEvalReplicadReady = React.useRef(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [activeTab, setActiveTab] = useState<'visual' | 'source'>('visual');
   const [svgSource, setSvgSource] = useState('');
@@ -507,6 +829,7 @@ export default function App() {
   const [logs, setLogs] = useState<string[]>([]);
   const [diagnosticsTab, setDiagnosticsTab] = useState<'info' | 'error'>('info');
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [replicadStatus, setReplicadStatus] = useState<{
     state: 'idle' | 'loading' | 'ready' | 'error';
     ms: number;
@@ -517,29 +840,43 @@ export default function App() {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [dropActive, setDropActive] = useState(false);
 
-  const evaluateAndSet = async (source: string, nextOverrides: Record<string, unknown>) => {
+  const evaluateAndSet = async (
+    source: string,
+    nextOverrides: Record<string, unknown>,
+    replicadReady = false
+  ) => {
+    lastEvalReplicadReady.current = replicadReady;
     const token = evalTokenRef.current + 1;
     evalTokenRef.current = token;
     if (useEsbuildEval) {
       setIsEvaluating(true);
-      const result = await evaluateTsxEsbuild(source, nextOverrides, errorCollector);
+      const result = await evaluateTsxEsbuild(source, nextOverrides, errorCollector, replicadReady);
       if (evalTokenRef.current === token) {
         setOutput(result);
         setIsEvaluating(false);
       }
       return;
     }
-    setOutput(evaluateTsx(source, nextOverrides, errorCollector));
+    setOutput(evaluateTsx(source, nextOverrides, errorCollector, replicadReady));
   };
 
   const run = async () => {
-    await evaluateAndSet(code, overrides);
+    await evaluateAndSet(code, overrides, replicadStatus.state === 'ready');
     setLogs((prev) => [`Ran eval (${code.length} chars)`, ...prev].slice(0, 6));
+  };
+  const loadDemo = async (demoId = selectedDemoId) => {
+    if (demoId === 'basic-panel') {
+      await resetToDefault();
+      return;
+    }
+    const demo = demoLibrary.find((entry) => entry.id === demoId);
+    if (!demo) return;
+    await runImport(demo.code, `${demo.label}.tsx`, demo.code.length);
   };
   const runImport = async (text: string, name?: string, size?: number) => {
     setCode(text);
     setOverrides({});
-    await evaluateAndSet(text, {});
+    await evaluateAndSet(text, {}, replicadStatus.state === 'ready');
     if (name && typeof size === 'number') {
       setLogs((prev) => [`Imported ${name} (${size} bytes)`, ...prev].slice(0, 6));
     } else {
@@ -549,7 +886,7 @@ export default function App() {
   const resetToDefault = async () => {
     setCode(defaultCode);
     setOverrides({});
-    await evaluateAndSet(defaultCode, {});
+    await evaluateAndSet(defaultCode, {}, replicadStatus.state === 'ready');
   };
   const triggerImport = () => fileInputRef.current?.click();
   const exportTsx = () => {
@@ -619,12 +956,12 @@ export default function App() {
       const stored = store.getCell('files', 'default', 'content');
       if (!cancelled && typeof stored === 'string' && stored.length > 0) {
         setCode(stored);
-        await evaluateAndSet(stored, overrides);
+        await evaluateAndSet(stored, overrides, replicadStatus.state === 'ready');
         setLogs((prev) => ['Loaded saved file', ...prev].slice(0, 6));
       } else if (!cancelled) {
         store.setRow('files', 'default', { name: 'main.tsx', content: defaultCode });
         setCode(defaultCode);
-        await evaluateAndSet(defaultCode, overrides);
+        await evaluateAndSet(defaultCode, overrides, replicadStatus.state === 'ready');
         setLogs((prev) => ['Initialized default file', ...prev].slice(0, 6));
       }
       persister.startAutoSave();
@@ -692,6 +1029,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (replicadStatus.state !== 'ready') return;
+    if (lastEvalReplicadReady.current) return;
+    evaluateAndSet(code, overrides, true);
+  }, [replicadStatus.state, code, overrides]);
+
+  useEffect(() => {
     if (output.error) return;
     if (lastErrorRef.current) {
       lastErrorRef.current = null;
@@ -702,8 +1045,6 @@ export default function App() {
   }, [output.error]);
 
   const varsEntries = Object.entries(output.vars ?? {});
-  const wantsReplicad =
-    typeof output.vars?.useReplicad === 'boolean' ? output.vars.useReplicad : false;
 
   const getVarMeta = (value: unknown) => {
     if (
@@ -764,6 +1105,32 @@ export default function App() {
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
           />
+          <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label htmlFor="demo-select" style={{ fontSize: 12, color: '#52606d' }}>
+              Demo
+            </label>
+            <select
+              id="demo-select"
+              value={selectedDemoId}
+              onChange={(event) => {
+                const next = event.target.value;
+                setSelectedDemoId(next);
+                loadDemo(next);
+              }}
+              style={{
+                border: '1px solid #cbd2d9',
+                borderRadius: 6,
+                padding: '4px 8px',
+                fontSize: 12,
+              }}
+            >
+              {demoLibrary.map((demo) => (
+                <option key={demo.id} value={demo.id}>
+                  {demo.label}
+                </option>
+              ))}
+            </select>
+          </div>
           {dropActive ? (
             <div
               style={{
@@ -820,10 +1187,10 @@ export default function App() {
               style={{ display: 'none' }}
               onChange={onImportFile}
             />
-            {varsEntries.length > 0 ? (
-              <div style={{ marginTop: 16 }}>
-                <h3 style={{ margin: '0 0 8px', fontSize: 12, color: '#52606d' }}>Variables</h3>
-                <div style={{ display: 'grid', gap: 8 }}>
+          {varsEntries.length > 0 ? (
+            <div style={{ marginTop: 16 }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: 12, color: '#52606d' }}>Variables</h3>
+              <div style={{ display: 'grid', gap: 8 }}>
                 {varsEntries.map(([key, value]) => {
                   const id = `var-${key}`;
                   const meta = getVarMeta(value);
@@ -854,7 +1221,7 @@ export default function App() {
                             );
                             const nextOverrides = { ...overrides, [key]: selected };
                             setOverrides(nextOverrides);
-                            evaluateAndSet(code, nextOverrides);
+                            evaluateAndSet(code, nextOverrides, replicadStatus.state === 'ready');
                           }}
                           style={{
                             border: '1px solid #cbd2d9',
@@ -893,7 +1260,7 @@ export default function App() {
                             }
                             const nextOverrides = { ...overrides, [key]: nextValue };
                             setOverrides(nextOverrides);
-                            evaluateAndSet(code, nextOverrides);
+                            evaluateAndSet(code, nextOverrides, replicadStatus.state === 'ready');
                           }}
                           style={{
                             border: '1px solid #cbd2d9',
@@ -946,11 +1313,7 @@ export default function App() {
                   }}
                   resetKey={code}
                 >
-                  {wantsReplicad && replicadStatus.state !== 'ready' ? (
-                    <ReplicadGate ready={false}>{rendered}</ReplicadGate>
-                  ) : (
-                    rendered
-                  )}
+                  {rendered}
                 </ErrorBoundary>
               ) : (
                 <pre style={styles.source}>{svgSource || 'No SVG rendered yet.'}</pre>
@@ -1034,8 +1397,41 @@ export default function App() {
                 ) : null}
               </>
             ) : (
-              <div style={styles.diagErrorBox}>
-                {errorDetails ? errorDetails : 'No errors.'}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!errorDetails) return;
+                      try {
+                        await navigator.clipboard.writeText(errorDetails);
+                        setLogs((prev) => ['Copied error to clipboard', ...prev].slice(0, 6));
+                        setCopyStatus('success');
+                      } catch {
+                        setLogs((prev) => ['Clipboard copy failed', ...prev].slice(0, 6));
+                        setCopyStatus('error');
+                      }
+                      window.setTimeout(() => setCopyStatus('idle'), 1500);
+                    }}
+                    style={{
+                      ...styles.button,
+                      background: '#fff',
+                      color: '#1f2933',
+                      padding: '4px 8px',
+                      fontSize: 11,
+                    }}
+                    disabled={!errorDetails}
+                  >
+                    {copyStatus === 'success'
+                      ? 'Copied'
+                      : copyStatus === 'error'
+                        ? 'Copy failed'
+                        : 'Copy error'}
+                  </button>
+                </div>
+                <div style={styles.diagErrorBox}>
+                  {errorDetails ? errorDetails : 'No errors.'}
+                </div>
               </div>
             )}
           </div>

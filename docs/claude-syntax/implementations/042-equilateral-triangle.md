@@ -1,0 +1,78 @@
+# 042 — Equilateral Triangle
+
+[Back to Implementation Plan](../IMPLEMENTATIONS.md)
+
+## Description
+
+An equilateral triangle defined by a single side length. All three sides are equal, all three angles are 60 degrees. The simplest Triangle variant.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Sprite>` | Container | Root |
+| `<Triangle>` | Primitive | Equilateral triangle |
+
+## Props Exercised
+
+- `id`, `kind="equilateral"`, `sideLength` — Geometry
+- `x`, `y` — Absolute position (top-left of bounding box)
+- `fill`, `stroke`, `strokeWidth` — Presentation
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 200">
+  <Triangle
+    id="tri"
+    kind="equilateral"
+    sideLength={80}
+    x={60}
+    y={30}
+    fill="#4a90d9"
+    stroke="#2a5080"
+    strokeWidth={1.5}
+  />
+</Sprite>
+```
+
+## Vertex Computation
+
+For an equilateral triangle with side length `s = 80`, positioned at bounding box top-left (60, 30):
+- Height = `s * sqrt(3)/2` = `80 * 0.866` ≈ 69.28
+- Bounding box: 80 wide, 69.28 tall
+- v0 (base-left): (60, 99.28) — bottom-left of bounding box
+- v1 (base-right): (140, 99.28) — bottom-right of bounding box
+- v2 (apex): (100, 30) — top-center of bounding box
+
+## Expected SVG Output
+
+```svg
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="60,99.28 140,99.28 100,30" fill="#4a90d9" stroke="#2a5080" stroke-width="1.5" />
+</svg>
+```
+
+## Anchors Registered
+
+| Anchor | Value | Description |
+|--------|-------|-------------|
+| `v0` | `{ x: 60, y: 99.28 }` | Base-left vertex |
+| `v1` | `{ x: 140, y: 99.28 }` | Base-right vertex |
+| `v2` | `{ x: 100, y: 30 }` | Apex vertex |
+| `centroid` | `{ x: 100, y: 76.19 }` | Average of all three vertices |
+| `midpoint01` | `{ x: 100, y: 99.28 }` | Midpoint of base edge |
+| `midpoint12` | `{ x: 120, y: 64.64 }` | Midpoint of right edge |
+| `midpoint20` | `{ x: 80, y: 64.64 }` | Midpoint of left edge |
+| `top` | `30` | Bounding box top (= v2.y) |
+| `bottom` | `99.28` | Bounding box bottom (= v0.y) |
+| `left` | `60` | Bounding box left (= v0.x) |
+| `right` | `140` | Bounding box right (= v1.x) |
+| `width` | `80` | = sideLength |
+| `height` | `69.28` | = sideLength * sqrt(3)/2 |
+
+## What This Validates
+
+- Triangle component generates correct vertices from `kind="equilateral"` + `sideLength`
+- SVG output is a `<polygon>` element with computed point coordinates
+- All vertex and bounding box anchors are registered for reference by other shapes

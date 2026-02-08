@@ -6,6 +6,22 @@ vi.mock('../replicad/init', () => ({
   initReplicad: vi.fn(async () => ({ ok: true, ms: 0 })),
 }));
 
+vi.mock('replicad', () => ({
+  draw: () => ({
+    rect: () => ({
+      chamfer: () => ({
+        toSVGPaths: () => [''],
+      }),
+    }),
+  }),
+  drawRoundedRectangle: () => ({
+    toSVGPaths: () => [''],
+  }),
+  drawRectangle: () => ({
+    toSVGPaths: () => [''],
+  }),
+}));
+
 vi.mock('esbuild-wasm', () => ({
   initialize: vi.fn(async () => {}),
   build: vi.fn(async () => ({ outputFiles: [{ text: 'export const __TRAMMEL_RESULT__ = { element: null, vars: {} };' }] })),
@@ -49,5 +65,30 @@ describe('CodexApp', () => {
       const stored = localStorage.getItem('trammel-codex') ?? '';
       expect(stored).toContain('width: 123');
     });
+  });
+
+  it('loads all demos without errors', async () => {
+    const { container, getByLabelText, queryByText } = await act(async () => render(<CodexApp />));
+    const select = getByLabelText('Demo') as HTMLSelectElement;
+    expect(select).toBeTruthy();
+
+    const errorTab = queryByText('Error');
+    if (errorTab) {
+      fireEvent.click(errorTab);
+    }
+
+    const textarea = container.querySelector('textarea') as HTMLTextAreaElement;
+    expect(textarea).toBeTruthy();
+
+    const values = Array.from(select.options).map((option) => option.value);
+    for (const value of values) {
+      fireEvent.change(select, { target: { value } });
+      await waitFor(() => {
+        expect(queryByText('No errors.')).toBeTruthy();
+      });
+      await waitFor(() => {
+        expect(textarea.value.length).toBeGreaterThan(0);
+      });
+    }
   });
 });

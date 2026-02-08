@@ -199,11 +199,11 @@ Prioritized by impact. Pick from the top.
 - [ ] `renders` table (id, fileId, svgMarkup, error, timestamp) with `renderByFile` index
 - [ ] Multi-file project support (currently single `default` file)
 
-### P3 — Tests — PARTIAL
+### P3 — Tests — DONE
 - [x] Constraint pure function unit tests — 84 tests across query, align, distribute, offset, arc, geometric, mirror, svg-helpers
 - [x] Error system tests — 6 tests: report, getErrors, hasErrors, clear, copy semantics, all 6 error kinds
 - [x] Eval pipeline tests — 13 tests: valid TSX, syntax errors, runtime errors, overrides, vars extraction, prettyPrintXml
-- [ ] Component smoke tests (Editor, Toolbar, SvgViewport render without crash)
+- [x] Component smoke tests — 32 tests: Editor (5), Toolbar (6), ErrorPanel (4), VariablePanel (8), Diagnostics (4), SvgViewport (5)
 
 ### P4 — Polish
 - [ ] Import/export enhancements (filename prompts, drag-and-drop .tsx files)

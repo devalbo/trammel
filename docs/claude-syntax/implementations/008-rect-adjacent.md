@@ -1,0 +1,71 @@
+# 008 — Rect Adjacent to Rect
+
+[Back to Implementation Plan](../IMPLEMENTATIONS.md)
+
+## Description
+
+Two rectangles placed side-by-side. Box B's left edge snaps to Box A's right edge using a reference string. This is the first example requiring the constraint resolver.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Sprite>` | Container | Root |
+| `<Rect>` #boxA | Primitive | The anchor (absolute position) |
+| `<Rect>` #boxB | Primitive | The dependent (positioned by reference) |
+
+## Constraints Used
+
+| Constraint | Expression | Resolution |
+|---|---|---|
+| Positional reference | `left="#boxA.right"` | Resolver reads boxA's right anchor (x + width = 80), assigns as boxB's x |
+| Positional reference | `top="#boxA.top"` | Resolver reads boxA's top anchor (y = 20), assigns as boxB's y |
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 100">
+
+  <Rect
+    id="boxA"
+    x={10}
+    y={20}
+    width={70}
+    height={50}
+    fill="#4a90d9"
+  />
+
+  <Rect
+    id="boxB"
+    left="#boxA.right"
+    top="#boxA.top"
+    width={70}
+    height={50}
+    fill="#d94a4a"
+  />
+
+</Sprite>
+```
+
+## Resolver Trace
+
+1. boxA resolves first (no dependencies): `{ x: 10, y: 20, w: 70, h: 50 }`
+2. boxA registers anchors: `right = 10 + 70 = 80`, `top = 20`
+3. boxB reads `#boxA.right` → `80`, assigns to `left` → `x = 80`
+4. boxB reads `#boxA.top` → `20`, assigns to `top` → `y = 20`
+5. boxB resolves: `{ x: 80, y: 20, w: 70, h: 50 }`
+
+## Expected SVG Output
+
+```svg
+<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+  <rect x="10" y="20" width="70" height="50" fill="#4a90d9" />
+  <rect x="80" y="20" width="70" height="50" fill="#d94a4a" />
+</svg>
+```
+
+## What This Validates
+
+- Reference string parser extracts target ID and anchor name from `"#boxA.right"`
+- Solver resolves dependencies in correct order (boxA before boxB)
+- Virtual prop `left` correctly maps to SVG `x`
