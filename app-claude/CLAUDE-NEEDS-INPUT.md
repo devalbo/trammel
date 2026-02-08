@@ -12,7 +12,7 @@ The backlog has four tracks: more constraints, dimension annotations, viewport i
 - [ ] Dimension annotations (`<Dimension>` component for measurement labels)
 - [ ] Viewport (pan/zoom, grid overlay)
 - [ ] Store expansion (multi-file projects, variables table, renders table)
-- [ ] Tests first before new features
+- [x] Tests first before new features
 - [ ] Other: ___
 
 Answer:
