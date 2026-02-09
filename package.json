@@ -18,7 +18,7 @@
     "build": "npm run build:codex && npm run build:claude && npm run build-storybook && npm run build:copy && npm run build:ref",
     "build:codex": "BUNDLE=1 npm --workspace app-codex run build",
     "build:claude": "BUNDLE=1 npm --workspace app-claude run build",
-    "build:ci": "CI=true BUNDLE=1 npm --workspace app-codex run build && CI=true BUNDLE=1 npm --workspace app-claude run build && BASE_PATH=/${REPO_NAME}/ npm run build:ref",
+    "build:ci": "CI=true BUNDLE=1 npm --workspace app-codex run build && CI=true BUNDLE=1 npm --workspace app-claude run build && BASE_PATH=/${REPO_NAME}/ npm --workspace storybook-viewer run build-storybook -- --output-dir ../app-ref/public/app-storybook && BASE_PATH=/${REPO_NAME}/ npm run build:ref",
     "build:copy": "node scripts/copy-codex-dist.mjs && node scripts/copy-claude-dist.mjs && node scripts/copy-storybook-dist.mjs",
     "build:ref": "npm --workspace app-ref run build",
     "preview": "npm --workspace app-ref run preview",
