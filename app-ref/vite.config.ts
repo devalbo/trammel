@@ -11,6 +11,7 @@ export default defineConfig({
     alias: {
       '@app-codex': path.resolve(__dirname, '../app-codex/src'),
       '@app-claude': path.resolve(__dirname, '../app-claude/src'),
+      '@app-storybook': path.resolve(__dirname, '../app-storybook/src'),
     },
   },
   server: {

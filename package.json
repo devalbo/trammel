@@ -5,7 +5,9 @@
   "workspaces": [
     "app-ref",
     "app-codex",
-    "app-claude"
+    "app-claude",
+    "app-storybook",
+    "storybook-viewer"
   ],
   "scripts": {
     "dev": "npm run dev:all",
@@ -13,14 +15,16 @@
     "dev:codex": "npm --workspace app-codex run dev",
     "dev:claude": "npm --workspace app-claude run dev",
     "dev:all": "concurrently -k \"npm run dev:ref\" \"npm run dev:codex\" \"npm run dev:claude\"",
-    "build": "npm run build:codex && npm run build:claude && npm run build:copy && npm run build:ref",
+    "build": "npm run build:codex && npm run build:claude && npm run build-storybook && npm run build:copy && npm run build:ref",
     "build:codex": "BUNDLE=1 npm --workspace app-codex run build",
     "build:claude": "BUNDLE=1 npm --workspace app-claude run build",
     "build:ci": "CI=true BUNDLE=1 npm --workspace app-codex run build && CI=true BUNDLE=1 npm --workspace app-claude run build && BASE_PATH=/${REPO_NAME}/ npm run build:ref",
-    "build:copy": "node scripts/copy-codex-dist.mjs && node scripts/copy-claude-dist.mjs",
+    "build:copy": "node scripts/copy-codex-dist.mjs && node scripts/copy-claude-dist.mjs && node scripts/copy-storybook-dist.mjs",
     "build:ref": "npm --workspace app-ref run build",
     "preview": "npm --workspace app-ref run preview",
-    "test": "npm --workspaces --if-present test"
+    "test": "npm --workspaces --if-present test",
+    "storybook": "npm run storybook -w storybook-viewer",
+    "build-storybook": "npm run build-storybook -w storybook-viewer"
   },
   "engines": {
     "node": ">=20.19"

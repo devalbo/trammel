@@ -25,6 +25,9 @@ function RootLayout() {
           <a href={`${baseUrl}app-claude/`} style={{ textDecoration: 'none' }}>
             Claude
           </a>
+          <a href={`${baseUrl}app-storybook/`} style={{ textDecoration: 'none' }}>
+            Storybook
+          </a>
           <a
             href={appConfig.githubRepoUrl}
             target="_blank"
@@ -101,7 +104,23 @@ const claudeRoute = createRoute({
   component: ClaudeRouteWrapper,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, codexRoute, claudeRoute]);
+const LazyStorybookRoute = React.lazy(() => import('@app-storybook/StorybookRoute'));
+
+function StorybookRouteWrapper() {
+  return (
+    <Suspense fallback={<div>Loading Storybook…</div>}>
+      <LazyStorybookRoute />
+    </Suspense>
+  );
+}
+
+const storybookRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'app-storybook',
+  component: StorybookRouteWrapper,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, codexRoute, claudeRoute, storybookRoute]);
 
 export const router = createRouter({
   routeTree,
