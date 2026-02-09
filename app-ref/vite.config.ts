@@ -14,6 +14,10 @@ export default defineConfig({
       '@app-storybook': path.resolve(__dirname, '../app-storybook/src'),
     },
   },
+  preview: {
+    port: 4173,
+    strictPort: true,
+  },
   server: {
     port: 5173,
     fs: {

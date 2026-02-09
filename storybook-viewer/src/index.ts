@@ -1,5 +1,2 @@
-export { Sprite } from './primitives/Sprite';
-export type { SpriteProps } from './primitives/Sprite';
-
-export { Rect } from './primitives/Rect';
-export type { RectProps } from './primitives/Rect';
+export { Sprite, Rect } from '@app-claude/claude-render';
+export type { SpriteProps, RectProps } from '@app-claude/claude-render';

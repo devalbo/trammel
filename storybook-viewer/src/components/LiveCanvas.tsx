@@ -9,8 +9,10 @@ interface LiveCanvasProps {
 
 export const LiveCanvas: React.FC<LiveCanvasProps> = ({ code, scope }) => (
   <LiveProvider code={code} scope={{ ...allExports, ...scope }}>
+    provider
     <div style={{ border: '1px solid #e0e0e0', borderRadius: 4, overflow: 'hidden' }}>
       <div style={{ padding: 16, background: '#fafafa' }}>
+        preview
         <LivePreview />
       </div>
       <LiveError
@@ -24,6 +26,7 @@ export const LiveCanvas: React.FC<LiveCanvasProps> = ({ code, scope }) => (
         }}
       />
       <div style={{ borderTop: '1px solid #e0e0e0' }}>
+        editor
         <LiveEditor
           style={{
             fontFamily: 'ui-monospace, "Cascadia Code", Menlo, monospace',

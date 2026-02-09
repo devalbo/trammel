@@ -1,5 +1,6 @@
 import type { StorybookConfig } from '@storybook/react-vite';
 import remarkGfm from 'remark-gfm';
+import path from 'node:path';
 
 const config: StorybookConfig = {
   stories: ['../src/stories/**/*.mdx', '../src/stories/**/*.stories.@(ts|tsx)'],
@@ -22,6 +23,11 @@ const config: StorybookConfig = {
     options: {},
   },
   viteFinal: async (config) => {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias as Record<string, string> || {}),
+      '@app-claude': path.resolve(__dirname, '../../app-claude/src'),
+    };
     // BASE_PATH is set during CI builds for GitHub Pages (e.g., "/trammel/")
     const basePath = process.env.BASE_PATH;
     if (basePath) {
