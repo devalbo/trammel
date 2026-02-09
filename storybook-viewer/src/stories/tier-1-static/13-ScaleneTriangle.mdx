@@ -1,0 +1,90 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 1 — Static Shapes/13 Scalene Triangle" />
+
+# 045 — Scalene Triangle
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+A scalene triangle with three different side lengths. All angles are different. Depending on side ratios, the triangle may be acute, right, or obtuse.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Triangle>` #acute | Primitive | Acute scalene (all angles < 90) |
+| `<Triangle>` #obtuse | Primitive | Obtuse scalene (one angle > 90) |
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 300 200">
+  {/* Acute scalene: sides 50, 60, 70 */}
+  <Triangle
+    id="acute"
+    kind="scalene"
+    a={50}
+    b={60}
+    c={70}
+    x={20}
+    y={30}
+    fill="#4a90d9"
+    stroke="#333"
+    strokeWidth={1}
+  />
+
+  {/* Obtuse scalene: sides 30, 40, 60 (60^2 > 30^2 + 40^2) */}
+  <Triangle
+    id="obtuse"
+    kind="scalene"
+    a={30}
+    b={40}
+    c={60}
+    x={160}
+    y={50}
+    fill="#e74c3c"
+    stroke="#333"
+    strokeWidth={1}
+  />
+</Sprite>
+```
+
+## Side Convention
+
+- `a` = side v0→v1 (the base, laid along the X-axis)
+- `b` = side v1→v2
+- `c` = side v2→v0
+
+## Vertex Computation (for "acute", a=50, b=60, c=70)
+
+Using the law of cosines to find vertex positions:
+1. v0 placed at origin of bounding box: (20, h)
+2. v1 at (20 + 50, h) — base along X-axis
+3. v2 computed via: angle at v0 = acos((50^2 + 70^2 - 60^2) / (2*50*70)) ≈ 57.12°
+   - v2.x = 20 + 70 * cos(57.12°) ≈ 58.0
+   - v2.y = h - 70 * sin(57.12°) ≈ h - 58.8
+
+## Acute vs Obtuse Test
+
+A triangle is obtuse when `c^2 > a^2 + b^2` (where c is the longest side):
+- "acute": 70^2 = 4900, 50^2 + 60^2 = 6100 → 4900 < 6100 → acute
+- "obtuse": 60^2 = 3600, 30^2 + 40^2 = 2500 → 3600 > 2500 → obtuse
+
+## What This Validates
+
+- `kind="scalene"` uses three independent side lengths
+- Vertex positions are computed via law of cosines
+- The same component handles both acute and obtuse cases
+- Triangle inequality is implicitly validated (a + b > c for all permutations)

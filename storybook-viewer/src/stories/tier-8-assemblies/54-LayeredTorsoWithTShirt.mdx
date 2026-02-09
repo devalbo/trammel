@@ -1,0 +1,82 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 8 — Full Assemblies/54 Layered Torso with T-Shirt" />
+
+# 038 — Layered Torso with T-Shirt
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+A torso with skin base layer and a shirt overlay with logo text. The shirt is in a toggleable Group with higher z-index. Tests nested Frames, z-ordering, and Group visibility.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Frame>` #body | Container | Body coordinate scope |
+| `<Path>` #skin | Primitive | Torso skin (z=0) |
+| `<Group>` #shirt | Container | Shirt layer (z=10) |
+| `<Frame>` #shirt_zone | Container | Shirt sub-scope |
+| `<Path>` #fabric | Primitive | Shirt shape |
+| `<Text>` #logo | Primitive | Shirt graphic |
+
+## Constraints Used
+
+- Z-ordering: skin at z=0, shirt Group at z=10, logo at z=1 within shirt
+- Nested Frames: body → shirt_zone
+- Group visibility toggle
+- Percentage-based font size
+
+## Syntax
+
+```jsx
+<Sprite
+  viewBox="0 0 200 300"
+  vars={{ shirtColor: "#336699", showShirt: true }}
+>
+  <Frame id="body" from={{ x: 0.1, y: 0.1 }} to={{ x: 0.9, y: 0.9 }}>
+
+    <Path id="skin" z={0}
+      d="M 0.2 0 L 0.8 0 L 0.9 0.3 L 0.9 1 L 0.1 1 L 0.1 0.3 Z"
+      fill="#e0ac69" />
+
+    <Group id="shirt" z={10} visible={(ctx) => ctx.vars.showShirt}>
+      <Frame id="shirt_zone" from={{ x: 0, y: 0 }} to={{ x: 1, y: 0.85 }}>
+
+        <Path id="fabric" z={0}
+          d="M 0.2 0 Q 0.5 0.15 0.8 0 L 1 0.25 L 0.85 0.35 L 0.85 1 L 0.15 1 L 0.15 0.35 L 0 0.25 Z"
+          fill={(ctx) => ctx.vars.shirtColor} />
+
+        <Text z={1}
+          centerX={0.5} centerY={0.5}
+          fontSize={0.1}
+          fontFamily="Impact"
+          fill="white">
+          SPRITE CO
+        </Text>
+
+      </Frame>
+    </Group>
+
+  </Frame>
+</Sprite>
+```
+
+## What This Validates
+
+- Nested Frames: shirt_zone is scoped within body
+- Z-ordering: skin renders first, then shirt group (fabric before logo)
+- Group visibility toggle hides entire shirt layer
+- Parametric shirt color via CalcValue
+- Percentage-based font size scales with frame

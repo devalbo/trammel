@@ -1,0 +1,62 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 1 — Static Shapes/05 Single Path" />
+
+# 005 — Single Path
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+A freeform SVG path using absolute coordinates. Tests passthrough of the `d` attribute with `normalized=\{false\}`.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Sprite>` | Container | Root SVG viewBox |
+| `<Path>` | Primitive | Freeform shape |
+
+## Props Exercised
+
+- `id`, `d`, `normalized` — Geometry
+- `fill`, `stroke` — Presentation
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 200">
+  <Path
+    id="arrow"
+    normalized={false}
+    d="M 40 100 L 140 100 L 140 70 L 180 110 L 140 150 L 140 120 L 40 120 Z"
+    fill="#4a90d9"
+    stroke="#2a5080"
+    strokeWidth={1.5}
+  />
+</Sprite>
+```
+
+## Expected SVG Output
+
+```svg
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <path d="M 40 100 L 140 100 L 140 70 L 180 110 L 140 150 L 140 120 L 40 120 Z" fill="#4a90d9" stroke="#2a5080" stroke-width="1.5" />
+</svg>
+```
+
+## What This Validates
+
+- Path passes the `d` string directly to SVG when `normalized=\{false\}`
+- The `d` prop is not transformed or scaled
+- Bounding box is computed from path data for anchor resolution (used by later examples)

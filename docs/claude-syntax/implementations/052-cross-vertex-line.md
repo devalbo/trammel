@@ -2,62 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-3-reference-math-25-line-between-triangle-vertices--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 A line connecting the apex (v2) of one triangle to the base-left vertex (v0) of another triangle. Tests cross-shape vertex referencing.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Triangle>` #triA | Primitive | Source triangle |
-| `<Triangle>` #triB | Primitive | Target triangle |
-| `<Line>` #link | Primitive | Connects vertices across shapes |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 300 150">
-  <Triangle
-    id="triA"
-    kind="equilateral"
-    sideLength={60}
-    x={20}
-    y={30}
-    fill="#4a90d9"
-    stroke="#333"
-  />
-
-  <Triangle
-    id="triB"
-    kind="right"
-    base={50}
-    height={40}
-    x={200}
-    y={50}
-    fill="#2ecc71"
-    stroke="#333"
-  />
-
-  {/* Line from triA's apex to triB's right-angle vertex */}
-  <Line
-    id="link"
-    start="#triA.v2"
-    end="#triB.v0"
-    stroke="#e74c3c"
-    strokeWidth={2}
-    style={{ strokeDasharray: "6 3" }}
-  />
-</Sprite>
-```
-
-## Resolver Trace
-
-1. triA (equilateral, sideLength=60, x=20, y=30):
-   - v2 (apex) = { x: 50, y: 30 }
-2. triB (right, base=50, height=40, x=200, y=50):
-   - v0 (right angle) = { x: 200, y: 90 }
-3. link: start = #triA.v2 = (50, 30), end = #triB.v0 = (200, 90)
 
 ## What This Validates
 

@@ -2,58 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-4-containers-29-nested-frames--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 A Frame inside a Frame. The inner Frame's `from`/`to` are in the outer Frame's 0..1 space. A circle inside the inner Frame uses 0..1 relative to the inner Frame.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Frame>` #outer | Container | First coordinate scope |
-| `<Frame>` #inner | Container | Nested scope (0..1 within outer) |
-| `<Circle>` #dot | Primitive | Positioned in inner Frame's 0..1 space |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 300 300">
-  <Frame id="outer" from={{ x: 30, y: 30 }} to={{ x: 270, y: 270 }}>
-    {/* Inner Frame: right half of outer */}
-    <Frame id="inner" from={{ x: 0.5, y: 0 }} to={{ x: 1, y: 1 }}>
-      {/* Circle centered in inner Frame */}
-      <Circle
-        id="dot"
-        centerX={0.5}
-        centerY={0.5}
-        r={0.2}
-        fill="#c0392b"
-      />
-    </Frame>
-  </Frame>
-</Sprite>
-```
-
-## Resolver Trace
-
-1. outer: origin = (30, 30), size = (240, 240)
-2. inner: from = (0.5, 0) in outer space → pixel (30 + 0.5×240, 30 + 0×240) = (150, 30)
-   to = (1, 1) in outer space → pixel (270, 270). Size = (120, 240)
-3. dot: centerX = 0.5 in inner space → 150 + 0.5×120 = 210
-   centerY = 0.5 in inner space → 30 + 0.5×240 = 150
-   r = 0.2 → scaled by min(120, 240) = 120 → r = 24
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-  <g>
-    <g>
-      <circle cx="210" cy="150" r="24" fill="#c0392b" />
-    </g>
-  </g>
-</svg>
-```
 
 ## What This Validates
 

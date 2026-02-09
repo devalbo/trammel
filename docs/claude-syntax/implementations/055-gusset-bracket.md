@@ -2,112 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-7-combinations-48-gusset-bracket-right-triangles-rects--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 An L-shaped bracket made of two perpendicular rects, reinforced with right-triangle gussets at the inner corner. Construction lines are drawn from triangle vertices to rect edges. Tests triangle + rect interop with vertex and bounding-box constraints.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Rect>` #horizontal | Primitive | Horizontal beam |
-| `<Rect>` #vertical | Primitive | Vertical beam |
-| `<Triangle>` #gusset_L | Primitive | Left gusset reinforcement |
-| `<Triangle>` #gusset_R | Primitive | Right gusset (mirrored) |
-| `<Line>` x2 | Primitive | Construction lines along hypotenuse |
-| `<Line>` #axis | Primitive | Symmetry axis (invisible) |
-
-## Constraints Used
-
-- Triangle vertex references for gusset placement
-- Rect bounding box references for beam alignment
-- Symmetry for mirrored gusset
-- Construction lines from triangle vertices
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 250 250">
-  {/* Horizontal beam */}
-  <Rect
-    id="horizontal"
-    x={20}
-    y={100}
-    width={210}
-    height={25}
-    fill="#b0b0b0"
-    stroke="#666"
-    strokeWidth={1}
-  />
-
-  {/* Vertical beam */}
-  <Rect
-    id="vertical"
-    right="#horizontal.right"
-    bottom="#horizontal.top"
-    width={25}
-    height={100}
-    fill="#b0b0b0"
-    stroke="#666"
-    strokeWidth={1}
-  />
-
-  {/* Symmetry axis at the inner corner's 45-degree bisector */}
-  <Line
-    id="corner_axis"
-    start={{ x: 205, y: 100 }}
-    end={{ x: 230, y: 75 }}
-    visible={false}
-  />
-
-  {/* Left gusset: right triangle in the inner corner */}
-  <Triangle
-    id="gusset_L"
-    kind="right"
-    base={40}
-    height={40}
-    right="#vertical.left"
-    bottom="#horizontal.top"
-    fill="#c9a040"
-    stroke="#8a6d20"
-    strokeWidth={1}
-  />
-
-  {/* Right gusset: mirrored (flipped to sit on the vertical beam) */}
-  <Triangle
-    id="gusset_R"
-    kind="right"
-    base={40}
-    height={40}
-    left="#vertical.right"
-    bottom="#horizontal.top"
-    baseAngle={90}
-    fill="#c9a040"
-    stroke="#8a6d20"
-    strokeWidth={1}
-  />
-
-  {/* Construction line along gusset_L hypotenuse */}
-  <Line
-    id="hyp_line_L"
-    start="#gusset_L.v1"
-    end="#gusset_L.v2"
-    stroke="#999"
-    strokeWidth={0.5}
-    style={{ strokeDasharray: "3 2" }}
-  />
-
-  {/* Construction line along gusset_R hypotenuse */}
-  <Line
-    id="hyp_line_R"
-    start="#gusset_R.v1"
-    end="#gusset_R.v2"
-    stroke="#999"
-    strokeWidth={0.5}
-    style={{ strokeDasharray: "3 2" }}
-  />
-</Sprite>
-```
 
 ## What This Validates
 

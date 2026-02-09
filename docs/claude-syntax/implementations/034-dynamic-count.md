@@ -2,53 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-6-layout-variables-46-dynamic-count-arrayfrom--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 A variable-count row of circles generated from a `count` variable using `Array.from`. Tests the interaction between React's dynamic rendering and the constraint system.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Layout>` | Container | Row distribution |
-| `<Circle>` x N | Primitive | Dynamic count |
-
-## Syntax
-
-```jsx
-<Sprite
-  viewBox="0 0 300 60"
-  vars={{ count: 5, radius: 8 }}
->
-  <Layout
-    direction="row"
-    gap={12}
-    padding={15}
-    alignItems="center"
-    x={0}
-    y={0}
-    width={300}
-    height={60}
-  >
-    {Array.from({ length: vars.count }, (_, i) => (
-      <Circle
-        key={i}
-        id={`dot_${i}`}
-        r={vars.radius}
-        fill="#4a90d9"
-      />
-    ))}
-  </Layout>
-</Sprite>
-```
-
-## With vars.count = 5, vars.radius = 8
-
-5 circles, each diameter 16, gap 12, padding 15.
-
-## With vars.count = 3, vars.radius = 12
-
-3 circles, each diameter 24, gap 12, padding 15.
 
 ## What This Validates
 

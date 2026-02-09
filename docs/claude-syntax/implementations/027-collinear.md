@@ -2,47 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-2-one-reference-18-collinear-edges--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 Two rects at different Y positions whose left edges are forced to the same X coordinate. This is the simplest geometric alignment — collinear vertical edges.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Rect>` #top | Primitive | Reference shape |
-| `<Rect>` #bottom | Primitive | Left edge aligned to top's left |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 200 160">
-  <Rect id="top" x={40} y={10} width={100} height={50} fill="#4a90d9" />
-
-  <Rect
-    id="bottom"
-    left="#top.left"
-    y={80}
-    width={60}
-    height={50}
-    fill="#2ecc71"
-  />
-</Sprite>
-```
-
-## Resolver Trace
-
-1. top: left = 40
-2. bottom: left = `#top.left` = 40 → x = 40
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
-  <rect x="40" y="10" width="100" height="50" fill="#4a90d9" />
-  <rect x="40" y="80" width="60" height="50" fill="#2ecc71" />
-</svg>
-```
 
 ## What This Validates
 

@@ -90,6 +90,10 @@ app-ref/public/app-codex/
 app-claude/dist-bundle/
 app-ref/public/app-claude/
 
+# Storybook build output copied into app-ref public
+storybook-viewer/storybook-static/
+app-ref/public/app-storybook/
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js

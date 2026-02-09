@@ -2,47 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-5-typed-constraints-37-parallel-rotation--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 Two lines where the second is forced to be parallel to the first using the `rotate` prop with `match`.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Line>` #rail | Primitive | Reference line (angled) |
-| `<Line>` #strut | Primitive | Forced parallel |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 200 200">
-  <Line
-    id="rail"
-    start={{ x: 20, y: 150 }}
-    end={{ x: 180, y: 50 }}
-    stroke="#333"
-    strokeWidth={2}
-  />
-
-  <Line
-    id="strut"
-    start={{ x: 20, y: 180 }}
-    length={100}
-    rotate={{ match: '#rail.angle' }}
-    stroke="#e74c3c"
-    strokeWidth={2}
-  />
-</Sprite>
-```
-
-## Resolver Trace
-
-1. rail: angle = atan2(50-150, 180-20) = atan2(-100, 160) ≈ -32°
-2. strut: rotate matches rail.angle → -32°
-3. strut: start = (20, 180), length = 100, angle = -32°
-   - end.x = 20 + 100 * cos(-32°) ≈ 105
-   - end.y = 180 + 100 * sin(-32°) ≈ 127
 
 ## What This Validates
 

@@ -2,52 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-5-typed-constraints-35-fit-between-anchors--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 A rect that stretches to fill the horizontal gap between two other rects. Width is implicit — determined by `left` and `right` virtual props targeting different shapes.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Rect>` #wallL | Primitive | Left boundary |
-| `<Rect>` #wallR | Primitive | Right boundary |
-| `<Rect>` #beam | Primitive | Fills the gap |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 300 100">
-  <Rect id="wallL" x={10} y={10} width={30} height={80} fill="#555" />
-  <Rect id="wallR" x={260} y={10} width={30} height={80} fill="#555" />
-
-  <Rect
-    id="beam"
-    left="#wallL.right"
-    right="#wallR.left"
-    centerY="#wallL.centerY"
-    height={20}
-    fill="#e74c3c"
-  />
-</Sprite>
-```
-
-## Resolver Trace
-
-1. wallL: right = 40
-2. wallR: left = 260
-3. beam: left = 40, right = 260 → width = 260 - 40 = 220
-4. beam: centerY = wallL.centerY = 10 + 80/2 = 50 → y = 50 - 20/2 = 40
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
-  <rect x="10" y="10" width="30" height="80" fill="#555" />
-  <rect x="260" y="10" width="30" height="80" fill="#555" />
-  <rect x="40" y="40" width="220" height="20" fill="#e74c3c" />
-</svg>
-```
 
 ## What This Validates
 

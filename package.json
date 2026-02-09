@@ -22,6 +22,7 @@
     "build:copy": "node scripts/copy-codex-dist.mjs && node scripts/copy-claude-dist.mjs && node scripts/copy-storybook-dist.mjs",
     "build:ref": "npm --workspace app-ref run build",
     "preview": "npm --workspace app-ref run preview",
+    "preview:all": "BASE_PATH=/dev-preview/ npm run build && npm run preview",
     "test": "npm --workspaces --if-present test",
     "storybook": "npm run storybook -w storybook-viewer",
     "build-storybook": "npm run build-storybook -w storybook-viewer"

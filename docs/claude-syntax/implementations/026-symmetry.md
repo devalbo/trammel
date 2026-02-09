@@ -2,56 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-5-typed-constraints-39-symmetry-mirror--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 Two rectangles mirrored across a vertical construction line. The right rect is the mirror of the left rect.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Line>` #axis | Primitive | Mirror axis (invisible) |
-| `<Rect>` #left | Primitive | Source shape |
-| `<Rect>` #right | Primitive | Mirrored copy |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 200 120">
-  {/* Vertical mirror axis at center */}
-  <Line id="axis" start={{ x: 100, y: 0 }} end={{ x: 100, y: 120 }} visible={false} />
-
-  {/* Source: left side */}
-  <Rect id="left" x={20} y={30} width={40} height={60} fill="#4a90d9" rx={4} />
-
-  {/* Mirror: right side */}
-  <Rect
-    id="right"
-    geo={{ type: 'symmetry', source: 'left', axis: 'axis', mode: 'mirror' }}
-    fill="#d94a4a"
-    rx={4}
-  />
-</Sprite>
-```
-
-## Resolver Trace
-
-1. axis: vertical line at x = 100
-2. left: `{ x: 20, y: 30, w: 40, h: 60 }` → center = (40, 60)
-3. right: mirror left's center across axis (x=100):
-   - left center x = 40, distance to axis = 60
-   - right center x = 100 + 60 = 160
-   - right x = 160 - 40/2 = 140
-   - y and dimensions are preserved: y = 30, w = 40, h = 60
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
-  <rect x="20" y="30" width="40" height="60" fill="#4a90d9" rx="4" />
-  <rect x="140" y="30" width="40" height="60" fill="#d94a4a" rx="4" />
-</svg>
-```
 
 ## What This Validates
 

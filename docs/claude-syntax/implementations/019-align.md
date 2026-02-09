@@ -2,56 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-5-typed-constraints-34-align-constraint-independent-axes--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 A rect aligned on X to one shape's edge and on Y to a different shape's edge. Tests the `align` position strategy with independent axis targets.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Rect>` #header | Primitive | X-axis reference |
-| `<Rect>` #sidebar | Primitive | Y-axis reference |
-| `<Rect>` #content | Primitive | Aligned to both |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 300 200">
-  <Rect id="header" x={10} y={10} width={280} height={40} fill="#4a90d9" />
-  <Rect id="sidebar" x={10} y={60} width={60} height={130} fill="#2ecc71" />
-
-  <Rect
-    id="content"
-    pos={{
-      type: 'align',
-      x: { edge: 'left', target: '#sidebar.right', margin: 10 },
-      y: { edge: 'top', target: '#header.bottom', margin: 10 }
-    }}
-    width={200}
-    height={120}
-    fill="#f0f0f0"
-    stroke="#999"
-  />
-</Sprite>
-```
-
-## Resolver Trace
-
-1. header: right = 290, bottom = 50
-2. sidebar: right = 70
-3. content X: left edge aligned to sidebar.right + 10 margin → x = 80
-4. content Y: top edge aligned to header.bottom + 10 margin → y = 60
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
-  <rect x="10" y="10" width="280" height="40" fill="#4a90d9" />
-  <rect x="10" y="60" width="60" height="130" fill="#2ecc71" />
-  <rect x="80" y="60" width="200" height="120" fill="#f0f0f0" stroke="#999" />
-</svg>
-```
 
 ## What This Validates
 

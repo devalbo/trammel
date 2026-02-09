@@ -1,0 +1,65 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 5 — Typed Constraints/37 Parallel Rotation" />
+
+# 028 — Parallel Rotation
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+Two lines where the second is forced to be parallel to the first using the `rotate` prop with `match`.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Line>` #rail | Primitive | Reference line (angled) |
+| `<Line>` #strut | Primitive | Forced parallel |
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 200">
+  <Line
+    id="rail"
+    start={{ x: 20, y: 150 }}
+    end={{ x: 180, y: 50 }}
+    stroke="#333"
+    strokeWidth={2}
+  />
+
+  <Line
+    id="strut"
+    start={{ x: 20, y: 180 }}
+    length={100}
+    rotate={{ match: '#rail.angle' }}
+    stroke="#e74c3c"
+    strokeWidth={2}
+  />
+</Sprite>
+```
+
+## Resolver Trace
+
+1. rail: angle = atan2(50-150, 180-20) = atan2(-100, 160) ≈ -32°
+2. strut: rotate matches rail.angle → -32°
+3. strut: start = (20, 180), length = 100, angle = -32°
+   - end.x = 20 + 100 * cos(-32°) ≈ 105
+   - end.y = 180 + 100 * sin(-32°) ≈ 127
+
+## What This Validates
+
+- `rotate=\{\{ match: '#id.angle' \}\}` copies a line's computed angle
+- Lines expose an `angle` anchor computed from start/end points
+- `length` + `start` + `rotate` fully determines a line (end is computed)

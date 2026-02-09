@@ -2,47 +2,13 @@
 
 [Back to Implementation Plan](../IMPLEMENTATIONS.md)
 
-## Description
+> **Live demo & full docs:** [Storybook](http://localhost:6006/?path=/docs/tier-1-static-shapes-15-rotated-triangle--docs)
+>
+> Source: `storybook-viewer/src/stories/`
+
+## Summary
 
 Equilateral triangles with different `baseAngle` values to orient them in various directions. Default is 0 (base at bottom, apex points up). Rotating the base rotates the entire triangle.
-
-## Elements
-
-| Element | Type | Purpose |
-|---------|------|---------|
-| `<Triangle>` x4 | Primitive | Same triangle, four orientations |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 300 200">
-  {/* Points up (default, baseAngle=0) */}
-  <Triangle id="up" kind="equilateral" sideLength={50}
-    x={20} y={30} baseAngle={0} fill="#4a90d9" />
-
-  {/* Points right (baseAngle=90, base is vertical on left) */}
-  <Triangle id="right" kind="equilateral" sideLength={50}
-    x={100} y={30} baseAngle={90} fill="#2ecc71" />
-
-  {/* Points down (baseAngle=180, base at top) */}
-  <Triangle id="down" kind="equilateral" sideLength={50}
-    x={180} y={30} baseAngle={180} fill="#e74c3c" />
-
-  {/* Points left (baseAngle=270, base is vertical on right) */}
-  <Triangle id="left_tri" kind="equilateral" sideLength={50}
-    x={20} y={120} baseAngle={270} fill="#f39c12" />
-</Sprite>
-```
-
-## How baseAngle Works
-
-`baseAngle` rotates the base edge around the triangle's centroid:
-- `0°` — base at bottom, apex up (default)
-- `90°` — base on left, apex right
-- `180°` — base at top, apex down
-- `270°` — base on right, apex left
-
-The vertex labels (v0, v1, v2) rotate with the triangle — v0 is always base-left and v2 is always the apex, relative to the base edge.
 
 ## What This Validates
 
