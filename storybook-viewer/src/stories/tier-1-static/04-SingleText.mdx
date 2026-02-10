@@ -1,22 +1,10 @@
 import { Meta } from '@storybook/blocks';
+import * as SingleTextStories from './04-SingleText.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 1 — Static Shapes/04 Single Text" />
+<Meta of={SingleTextStories} />
 
-# 006 — Single Text
-
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
-
-## Description
+# 004 — Single Text
 
 A text label with explicit position and font properties. Tests text rendering and bounding box computation for text elements.
 
@@ -33,11 +21,10 @@ A text label with explicit position and font properties. Tests text rendering an
 - `fontSize`, `fontFamily`, `fontWeight` — Typography
 - `fill`, `textAnchor` — Presentation
 
-## Syntax
+## Default
 
-```jsx
-<Sprite viewBox="0 0 200 80">
-  <Text
+<LiveCanvas code={`<Sprite viewBox="0 0 200 80">
+  <SpriteText
     id="label"
     x={100}
     y={45}
@@ -46,22 +33,14 @@ A text label with explicit position and font properties. Tests text rendering an
     fontWeight="bold"
     fill="#333"
     textAnchor="middle"
+    rotation={-10}
   >
     PLATE A
-  </Text>
-</Sprite>
-```
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
-  <text x="100" y="45" font-size="18" font-family="Arial, sans-serif" font-weight="bold" fill="#333" text-anchor="middle">PLATE A</text>
-</svg>
-```
+  </SpriteText>
+</Sprite>`} />
 
 ## What This Validates
 
-- Text renders children as SVG `<text>` content
+- SpriteText renders children as SVG `<text>` content
 - Font properties map to SVG attributes (camelCase → kebab-case)
 - `textAnchor` maps to SVG `text-anchor`

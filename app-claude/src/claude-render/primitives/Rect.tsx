@@ -11,30 +11,39 @@ export interface RectProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
+  rotation?: number;
 }
 
 export const Rect: React.FC<RectProps> = ({
   id,
-  x,
-  y,
-  width,
-  height,
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
   rx,
   ry,
   fill,
   stroke,
   strokeWidth,
-}) => (
-  <rect
-    id={id}
-    x={x}
-    y={y}
-    width={width}
-    height={height}
-    rx={rx}
-    ry={ry}
-    fill={fill}
-    stroke={stroke}
-    strokeWidth={strokeWidth}
-  />
-);
+  rotation,
+}) => {
+  const transform = rotation
+    ? `rotate(${rotation}, ${x + width / 2}, ${y + height / 2})`
+    : undefined;
+
+  return (
+    <rect
+      id={id}
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      rx={rx}
+      ry={ry}
+      fill={fill}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      transform={transform}
+    />
+  );
+};
