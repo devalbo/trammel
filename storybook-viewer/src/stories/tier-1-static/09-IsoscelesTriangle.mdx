@@ -1,22 +1,10 @@
 import { Meta } from '@storybook/blocks';
+import * as IsoscelesTriangleStories from './09-IsoscelesTriangle.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 1 — Static Shapes/09 Isosceles Triangle" />
+<Meta of={IsoscelesTriangleStories} />
 
 # 044 — Isosceles Triangle
-
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
-
-## Description
 
 An isosceles triangle with two equal sides (legs). Can be defined by `base` + `height`, or `base` + `legs`. Depending on proportions, the triangle is acute (tall/narrow) or obtuse (short/wide).
 
@@ -26,12 +14,11 @@ An isosceles triangle with two equal sides (legs). Can be defined by `base` + `h
 |---------|------|---------|
 | `<Triangle>` #tall | Primitive | Acute isosceles (height > base/2) |
 | `<Triangle>` #wide | Primitive | Obtuse isosceles (height < base/2) |
+| `<Triangle>` #legs_form | Primitive | Defined via legs instead of height |
 
-## Syntax
+## Default
 
-```jsx
-<Sprite viewBox="0 0 300 200">
-  {/* Acute isosceles: tall and narrow */}
+<LiveCanvas code={`<Sprite viewBox="0 0 300 200">
   <Triangle
     id="tall"
     kind="isosceles"
@@ -41,9 +28,8 @@ An isosceles triangle with two equal sides (legs). Can be defined by `base` + `h
     y={20}
     fill="#4a90d9"
     stroke="#333"
+    rotation={12}
   />
-
-  {/* Obtuse isosceles: short and wide */}
   <Triangle
     id="wide"
     kind="isosceles"
@@ -53,9 +39,8 @@ An isosceles triangle with two equal sides (legs). Can be defined by `base` + `h
     y={70}
     fill="#e74c3c"
     stroke="#333"
+    rotation={-8}
   />
-
-  {/* Alternative: specify legs instead of height */}
   <Triangle
     id="legs_form"
     kind="isosceles"
@@ -65,16 +50,9 @@ An isosceles triangle with two equal sides (legs). Can be defined by `base` + `h
     y={120}
     fill="#f39c12"
     stroke="#333"
+    rotation={5}
   />
-</Sprite>
-```
-
-## Vertex Computation (for "tall", base=40, height=80)
-
-- v0 (base-left): (40, 100) — bottom-left
-- v1 (base-right): (80, 100) — bottom-right
-- v2 (apex): (60, 20) — top-center
-- Legs (v0→v2 and v1→v2): sqrt(20^2 + 80^2) ≈ 82.46
+</Sprite>`} />
 
 ## Acute vs Obtuse
 
@@ -83,10 +61,9 @@ An isosceles triangle with two equal sides (legs). Can be defined by `base` + `h
 | `tall` | 40 | 80 | ~28 deg | Acute (all angles < 90) |
 | `wide` | 100 | 30 | ~118 deg | Obtuse (apex angle > 90) |
 
-The crossover point is when `height = base * sqrt(3)/2` (equilateral). Taller = more acute, shorter = more obtuse.
-
 ## What This Validates
 
 - `kind="isosceles"` constructs with base centered and apex above
 - Both `base + height` and `base + legs` forms work
 - The same component produces both acute and obtuse triangles depending on proportions
+- Rotation applies independently to each triangle around its own centroid

@@ -21,3 +21,15 @@ export type { PointProps } from './primitives/Point';
 
 export { Triangle } from './primitives/Triangle';
 export type { TriangleProps } from './primitives/Triangle';
+
+export { Polygon } from './primitives/Polygon';
+export type { PolygonProps } from './primitives/Polygon';
+
+export { Hexagon } from './primitives/Hexagon';
+export type { HexagonProps } from './primitives/Hexagon';
+
+export { Pentagon } from './primitives/Pentagon';
+export type { PentagonProps } from './primitives/Pentagon';
+
+export { Arc } from './primitives/Arc';
+export type { ArcProps } from './primitives/Arc';

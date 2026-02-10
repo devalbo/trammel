@@ -1,0 +1,79 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 4 — Containers/03 Basic Frame" />
+
+# 014 — Basic Frame
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+A Frame containing a Rect that uses normalized 0..1 coordinates. The Frame occupies a subregion of the viewBox, and the child's coordinates are relative to the Frame.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Sprite>` | Container | Root (200x200 viewBox) |
+| `<Frame>` #panel | Container | Coordinate scope (maps 0..1 to 50,30 → 170,150) |
+| `<Rect>` #inner | Primitive | Positioned in normalized coords |
+
+## Constraints Used
+
+| Constraint | Expression | Resolution |
+|---|---|---|
+| Frame bounds | `from=\{\{ x: 50, y: 30 \}\} to=\{\{ x: 170, y: 150 \}\}` | Frame is 120px wide, 120px tall |
+| Normalized position | `x=\{0.1\} y=\{0.1\}` | x = 50 + 0.1*120 = 62, y = 30 + 0.1*120 = 42 |
+| Normalized size | `width=\{0.8\} height=\{0.8\}` | w = 0.8*120 = 96, h = 0.8*120 = 96 |
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 200">
+  <Frame id="panel" from={{ x: 50, y: 30 }} to={{ x: 170, y: 150 }}>
+    <Rect
+      id="inner"
+      x={0.1}
+      y={0.1}
+      width={0.8}
+      height={0.8}
+      fill="#4a90d9"
+    />
+  </Frame>
+</Sprite>
+```
+
+## Resolver Trace
+
+1. Frame resolves its pixel bounds: origin = (50, 30), size = (120, 120)
+2. Child `inner` has normalized coords → multiply by Frame size:
+   - x = 50 + 0.1 × 120 = 62
+   - y = 30 + 0.1 × 120 = 42
+   - width = 0.8 × 120 = 96
+   - height = 0.8 × 120 = 96
+
+## Expected SVG Output
+
+```svg
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <rect x="62" y="42" width="96" height="96" fill="#4a90d9" />
+  </g>
+</svg>
+```
+
+## What This Validates
+
+- Frame transforms children's 0..1 coordinates into pixel space
+- Frame computes its own pixel bounds from `from`/`to`
+- Children's position AND size are scaled by the Frame dimensions

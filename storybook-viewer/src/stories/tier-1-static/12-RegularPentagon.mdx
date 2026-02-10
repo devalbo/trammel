@@ -1,83 +1,44 @@
 import { Meta } from '@storybook/blocks';
+import * as RegularPentagonStories from './12-RegularPentagon.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 1 — Static Shapes/12 Regular Pentagon" />
+<Meta of={RegularPentagonStories} />
 
 # 047 — Regular Pentagon
 
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
-
-## Description
-
-A regular pentagon (5 equal sides, 5 equal angles of 108 degrees) defined by circumradius.
+A regular pentagon (5 equal sides, 5 equal angles of 108 degrees) defined by circumradius. Uses the `Pentagon` component (thin wrapper over `Polygon` with `sides=5`).
 
 ## Elements
 
 | Element | Type | Purpose |
 |---------|------|---------|
-| `<Polygon>` | Primitive | Regular pentagon |
+| `<Pentagon>` | Primitive | Regular pentagon |
 
 ## Props Exercised
 
-- `sides=5`, `r` — Geometry
+- `r` — Geometry (circumradius)
 - `centerX`, `centerY` — Center position
 - `fill`, `stroke` — Presentation
+- `rotation` — Rotation around center
 
-## Syntax
+## Default
 
-```jsx
-<Sprite viewBox="0 0 200 200">
-  <Polygon
+<LiveCanvas code={`<Sprite viewBox="0 0 200 200">
+  <Pentagon
     id="pent"
-    sides={5}
     r={60}
     centerX={100}
     centerY={100}
     fill="#9b59b6"
     stroke="#6c3483"
     strokeWidth={1.5}
+    rotation={10}
   />
-</Sprite>
-```
-
-## Vertex Computation
-
-For a regular pentagon with `r=60`, centered at (100, 100), flat-bottom orientation (startAngle=0):
-
-The vertices are placed at angles: `90 + 360/5 * i` degrees for `i = 0..4`, adjusted so the base edge is horizontal at the bottom.
-
-| Vertex | Angle (from center) | x | y |
-|--------|---------------------|---|---|
-| v0 | -54° | 148.54 | 138.04 |
-| v1 | 18° | 157.08 | 81.46 |
-| v2 | 90° | 100 | 40 |
-| v3 | 162° | 42.92 | 81.46 |
-| v4 | 234° | 51.46 | 138.04 |
-
-(Exact values depend on the flat-bottom convention.)
-
-## Anchors Registered
-
-| Anchor | Type | Description |
-|--------|------|-------------|
-| `v0`..`v4` | Point2D | Five vertex positions |
-| `center` | Point2D | `\{ x: 100, y: 100 \}` |
-| `r` | number | `60` (circumradius) |
-| `apothem` | number | `r * cos(π/5)` ≈ 48.54 |
-| `top`, `bottom`, etc. | number | Bounding box edges |
+</Sprite>`} />
 
 ## What This Validates
 
-- `<Polygon sides=\{5\}>` generates a regular pentagon
-- `r` (circumradius) determines size
+- `Pentagon` is sugar for `Polygon` with `sides=5`
+- `r` (circumradius) determines size directly
 - All 5 vertex anchors are registered
-- `apothem` is derived from `r` and `sides`
+- Rotation applies around the center point

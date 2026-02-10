@@ -1,0 +1,104 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 3 — Reference Math/04 Vertex Reference (Triangle)" />
+
+# 050 — Vertex Reference (Triangle)
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+Circles placed at each vertex of a triangle using vertex anchor references. Tests that `#tri.v0`, `#tri.v1`, `#tri.v2` resolve to Point2D values with `.x` and `.y` sub-anchors.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Triangle>` #tri | Primitive | Equilateral triangle |
+| `<Circle>` x3 | Primitive | Dots at each vertex |
+
+## Constraints Used
+
+| Constraint | Expression | Resolution |
+|---|---|---|
+| Vertex X reference | `centerX="#tri.v0.x"` | Reads the X coordinate of vertex v0 |
+| Vertex Y reference | `centerY="#tri.v0.y"` | Reads the Y coordinate of vertex v0 |
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 200">
+  <Triangle
+    id="tri"
+    kind="equilateral"
+    sideLength={100}
+    x={50}
+    y={25}
+    fill="#e8e8e8"
+    stroke="#999"
+  />
+
+  {/* Dot at v0 (base-left) */}
+  <Circle
+    id="dot0"
+    centerX="#tri.v0.x"
+    centerY="#tri.v0.y"
+    r={6}
+    fill="#e74c3c"
+  />
+
+  {/* Dot at v1 (base-right) */}
+  <Circle
+    id="dot1"
+    centerX="#tri.v1.x"
+    centerY="#tri.v1.y"
+    r={6}
+    fill="#3498db"
+  />
+
+  {/* Dot at v2 (apex) */}
+  <Circle
+    id="dot2"
+    centerX="#tri.v2.x"
+    centerY="#tri.v2.y"
+    r={6}
+    fill="#2ecc71"
+  />
+</Sprite>
+```
+
+## Resolver Trace
+
+1. tri resolves with sideLength=100, x=50, y=25:
+   - v0 = \{ x: 50, y: 111.6 \}
+   - v1 = \{ x: 150, y: 111.6 \}
+   - v2 = \{ x: 100, y: 25 \}
+2. dot0: reads `#tri.v0.x` → 50, `#tri.v0.y` → 111.6
+3. dot1: reads `#tri.v1.x` → 150, `#tri.v1.y` → 111.6
+4. dot2: reads `#tri.v2.x` → 100, `#tri.v2.y` → 25
+
+## Alternative Syntax
+
+Vertex anchors also work as Point2D targets for Line start/end:
+
+```jsx
+<Line start="#tri.v0" end="#tri.v2" stroke="red" />
+```
+
+When a vertex anchor is used where a Point2D is expected (like Line `start`/`end`), the full `\{ x, y \}` is returned. When used with `.x` or `.y` suffix, the scalar component is returned.
+
+## What This Validates
+
+- Vertex anchors expose `.x` and `.y` sub-properties
+- Vertex anchors resolve to Point2D when used as a whole (e.g., Line start/end)
+- Three independently colored dots prove each vertex resolves to a different point

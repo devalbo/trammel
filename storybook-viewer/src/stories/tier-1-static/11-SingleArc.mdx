@@ -1,24 +1,12 @@
 import { Meta } from '@storybook/blocks';
+import * as SingleArcStories from './11-SingleArc.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 1 — Static Shapes/11 Single Arc" />
+<Meta of={SingleArcStories} />
 
-# 004 — Single Arc
+# Single Arc
 
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
-
-## Description
-
-A circular arc defined by center, radius, and angle range. Tests conversion of the high-level Arc props into an SVG `<path>` with arc commands.
+A circular arc defined by center, radius, and angle range. Converts high-level props into an SVG `<path>` with arc commands.
 
 ## Elements
 
@@ -31,11 +19,11 @@ A circular arc defined by center, radius, and angle range. Tests conversion of t
 
 - `id`, `center`, `r`, `startAngle`, `endAngle` — Geometry
 - `stroke`, `strokeWidth`, `fill` — Presentation
+- `rotation` — Rotation around center
 
-## Syntax
+## Default
 
-```jsx
-<Sprite viewBox="0 0 200 200">
+<LiveCanvas code={`<Sprite viewBox="0 0 200 200">
   <Arc
     id="curve"
     center={{ x: 100, y: 100 }}
@@ -45,24 +33,13 @@ A circular arc defined by center, radius, and angle range. Tests conversion of t
     stroke="#c0392b"
     strokeWidth={3}
     fill="none"
+    rotation={15}
   />
-</Sprite>
-```
-
-## Expected SVG Output
-
-The Arc component must compute SVG arc path commands from the center/radius/angle description:
-
-```svg
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-  <path d="M 160 100 A 60 60 0 1 1 100 160" stroke="#c0392b" stroke-width="3" fill="none" />
-</svg>
-```
-
-(Exact path data depends on angle→point conversion and large-arc-flag calculation.)
+</Sprite>`} />
 
 ## What This Validates
 
 - Arc converts `center` + `r` + angle range into SVG arc path commands
 - `startAngle`/`endAngle` in degrees are translated to SVG arc parameters
-- The large-arc-flag is correctly computed (270° > 180° → flag = 1)
+- The large-arc-flag is correctly computed (270 > 180 = flag 1)
+- Rotation applies around the center point

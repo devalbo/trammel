@@ -1,0 +1,75 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 5 — Typed Constraints/11 Polar Constraint" />
+
+# 020 — Polar Constraint
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+Four circles placed at 0, 90, 180, and 270 degrees around a central point using polar coordinates.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Point>` #hub | Primitive | Center anchor (invisible) |
+| `<Circle>` x4 | Primitive | Positioned by angle |
+
+## Syntax
+
+```jsx
+<Sprite viewBox="0 0 200 200">
+  <Point id="hub" at={{ x: 100, y: 100 }} />
+
+  <Circle id="n" pos={{ type: 'polar', center: '#hub', radius: 50, angle: 0 }}
+    r={8} fill="#e74c3c" />
+
+  <Circle id="e" pos={{ type: 'polar', center: '#hub', radius: 50, angle: 90 }}
+    r={8} fill="#3498db" />
+
+  <Circle id="s" pos={{ type: 'polar', center: '#hub', radius: 50, angle: 180 }}
+    r={8} fill="#2ecc71" />
+
+  <Circle id="w" pos={{ type: 'polar', center: '#hub', radius: 50, angle: 270 }}
+    r={8} fill="#f39c12" />
+</Sprite>
+```
+
+## Resolver Trace
+
+- hub: `\{ x: 100, y: 100 \}`
+- n: angle=0° → cx = 100 + 50*cos(0) = 150, cy = 100 - 50*sin(0) = 100
+- e: angle=90° → cx = 100 + 50*cos(90) = 100, cy = 100 - 50*sin(90) = 50
+- s: angle=180° → cx = 100 + 50*cos(180) = 50, cy = 100 - 50*sin(180) = 100
+- w: angle=270° → cx = 100 + 50*cos(270) = 100, cy = 100 - 50*sin(270) = 150
+
+(Using math convention: 0° = right/east, angles CCW. Adjust if convention differs.)
+
+## Expected SVG Output
+
+```svg
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="100" r="8" fill="#e74c3c" />
+  <circle cx="100" cy="50" r="8" fill="#3498db" />
+  <circle cx="50" cy="100" r="8" fill="#2ecc71" />
+  <circle cx="100" cy="150" r="8" fill="#f39c12" />
+</svg>
+```
+
+## What This Validates
+
+- Polar position constraint converts (center, radius, angle) to (cx, cy)
+- Angle convention and trigonometric calculations are correct
+- Point anchors work as polar centers

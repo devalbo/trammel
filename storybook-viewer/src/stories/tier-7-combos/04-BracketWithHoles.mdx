@@ -1,0 +1,106 @@
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Tier 7 — Combinations/04 Bracket with Holes" />
+
+# 036 — Bracket with Holes
+
+<div style={{
+  padding: '12px 16px',
+  marginBottom: 24,
+  background: '#fff8e1',
+  border: '1px solid #ffe082',
+  borderRadius: 4,
+  fontSize: 14,
+  color: '#6d4c00',
+}}>
+  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
+</div>
+
+## Description
+
+A rectangular plate with a parametric number of bolt holes distributed via Layout. Each hole is a pair of concentric circles (bore + counterbore). Combines Layout, concentric constraints, and parametric variables.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Rect>` #plate | Primitive | Bracket body |
+| `<Layout>` | Container | Distributes holes |
+| `<Circle>` (bore) x N | Primitive | Through-holes |
+| `<Circle>` (cbore) x N | Primitive | Counterbore ring, concentric |
+| `<Line>` #centerline | Primitive | Construction geometry |
+
+## Constraints Used
+
+- Layout `space-between` for hole distribution
+- Concentric circles (counterbore on bore)
+- Parametric count and radius via variables
+- Invisible centerline for visual reference
+
+## Syntax
+
+```jsx
+<Sprite
+  viewBox="0 0 300 100"
+  vars={{ boltCount: 4, boreRadius: 5, cboreRadius: 9, margin: 25 }}
+>
+  <Rect
+    id="plate"
+    x={20}
+    y={15}
+    width={260}
+    height={70}
+    fill="#c0c0c0"
+    stroke="#666"
+    strokeWidth={1}
+    rx={3}
+  />
+
+  <Line
+    id="centerline"
+    start="#plate.left"
+    end="#plate.right"
+    centerY="#plate.centerY"
+    stroke="#999"
+    strokeWidth={0.5}
+    style={{ strokeDasharray: "4 2" }}
+  />
+
+  <Layout
+    direction="row"
+    justifyContent="space-between"
+    alignItems="center"
+    left={(ctx) => ctx.get('plate').left + ctx.vars.margin}
+    right={(ctx) => ctx.get('plate').right - ctx.vars.margin}
+    centerY="#plate.centerY"
+    height={0}
+  >
+    {Array.from({ length: vars.boltCount }, (_, i) => (
+      <Group key={i}>
+        <Circle
+          id={`cbore_${i}`}
+          r={vars.cboreRadius}
+          fill="#a0a0a0"
+          stroke="#888"
+          strokeWidth={0.5}
+        />
+        <Circle
+          id={`bore_${i}`}
+          geo={{ type: 'concentric', target: `cbore_${i}` }}
+          r={vars.boreRadius}
+          fill="white"
+          stroke="#666"
+          strokeWidth={0.5}
+        />
+      </Group>
+    ))}
+  </Layout>
+</Sprite>
+```
+
+## What This Validates
+
+- Layout + parametric count working together
+- Concentric constraint between sibling circles inside a Group
+- CalcValue positioning Layout bounds relative to plate with margin
+- Changing `boltCount` re-distributes; changing radii resizes all holes

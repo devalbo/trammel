@@ -1,22 +1,10 @@
 import { Meta } from '@storybook/blocks';
+import * as RightTriangleStories from './08-RightTriangle.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 1 — Static Shapes/08 Right Triangle" />
+<Meta of={RightTriangleStories} />
 
 # 043 — Right Triangle
-
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
-
-## Description
 
 A right triangle with a 90-degree angle at vertex v0. Defined by `base` (horizontal leg) and `height` (vertical leg). The hypotenuse connects v1 to v2.
 
@@ -31,11 +19,11 @@ A right triangle with a 90-degree angle at vertex v0. Defined by `base` (horizon
 
 - `kind="right"`, `base`, `height` — Geometry
 - `x`, `y` — Position
+- `rotation` — Rotation around centroid
 
-## Syntax
+## Default
 
-```jsx
-<Sprite viewBox="0 0 200 150">
+<LiveCanvas code={`<Sprite viewBox="0 0 200 150">
   <Triangle
     id="rt"
     kind="right"
@@ -46,9 +34,9 @@ A right triangle with a 90-degree angle at vertex v0. Defined by `base` (horizon
     fill="#2ecc71"
     stroke="#1a8a4a"
     strokeWidth={1.5}
+    rotation={10}
   />
-</Sprite>
-```
+</Sprite>`} />
 
 ## Vertex Computation
 
@@ -56,30 +44,11 @@ For a right triangle at (30, 20) with base=80, height=60:
 - v0 (right angle): (30, 80) — bottom-left corner
 - v1 (base end): (110, 80) — bottom-right corner
 - v2 (apex): (30, 20) — top-left corner
-- Hypotenuse: v1→v2, length = sqrt(80^2 + 60^2) = 100
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="30,80 110,80 30,20" fill="#2ecc71" stroke="#1a8a4a" stroke-width="1.5" />
-</svg>
-```
-
-## Anchors Registered
-
-| Anchor | Value | Description |
-|--------|-------|-------------|
-| `v0` | `\{ x: 30, y: 80 \}` | Right-angle vertex |
-| `v1` | `\{ x: 110, y: 80 \}` | Base end |
-| `v2` | `\{ x: 30, y: 20 \}` | Apex (top of height) |
-| `centroid` | `\{ x: 56.67, y: 60 \}` | Geometric center |
-| `width` | `80` | = base |
-| `height` | `60` | = height |
+- Hypotenuse: v1 to v2, length = sqrt(80^2 + 60^2) = 100
 
 ## What This Validates
 
 - `kind="right"` places the right angle at v0
 - Base runs along the X-axis from v0, height runs along the Y-axis from v0
-- Hypotenuse is implicit (v1→v2)
-- The 3-4-5 family (base=80, height=60, hyp=100) is a classic validation case
+- Hypotenuse is implicit (v1 to v2)
+- Rotation applies around the centroid

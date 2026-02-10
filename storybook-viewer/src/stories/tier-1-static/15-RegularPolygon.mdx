@@ -1,0 +1,67 @@
+import { Meta } from '@storybook/blocks';
+import * as RegularPolygonStories from './15-RegularPolygon.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
+
+<Meta of={RegularPolygonStories} />
+
+# Regular Polygon
+
+The generic `Polygon` component renders any regular polygon via the `sides` prop. `Hexagon` and `Pentagon` are thin wrappers with `sides` pre-set.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Polygon>` | Primitive | Regular n-gon |
+
+## Props Exercised
+
+- `sides` — Number of sides
+- `sideLength` or `r` — Size (side length or circumradius)
+- `centerX`, `centerY` — Center position
+- `rotation` — Rotation around center
+
+## Default
+
+<LiveCanvas code={`<Sprite viewBox="0 0 300 200">
+  <Polygon
+    id="tri"
+    sides={3}
+    sideLength={50}
+    centerX={60}
+    centerY={100}
+    fill="#e74c3c"
+    stroke="#c0392b"
+    strokeWidth={1.5}
+    rotation={10}
+  />
+  <Polygon
+    id="oct"
+    sides={8}
+    sideLength={30}
+    centerX={160}
+    centerY={100}
+    fill="#3498db"
+    stroke="#2980b9"
+    strokeWidth={1.5}
+    rotation={-5}
+  />
+  <Polygon
+    id="dodec"
+    sides={12}
+    sideLength={20}
+    centerX={260}
+    centerY={100}
+    fill="#2ecc71"
+    stroke="#27ae60"
+    strokeWidth={1.5}
+    rotation={15}
+  />
+</Sprite>`} />
+
+## What This Validates
+
+- `sides` controls vertex count for any regular polygon
+- Flat-bottom orientation is consistent across all side counts
+- `sideLength` derives circumradius correctly for each n
+- Rotation applies around the center point
