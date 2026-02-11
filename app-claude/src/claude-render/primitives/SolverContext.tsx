@@ -56,6 +56,7 @@ export class AnchorRegistry {
   private shapes = new Map<string, RealizedShape>();
   private _diagnostics: SolverDiagnostic[] = [];
   private _viewBox: ViewBox | null = null;
+  private _allowForwardRefs = false;
 
   get diagnostics(): readonly SolverDiagnostic[] {
     return this._diagnostics;
@@ -67,6 +68,14 @@ export class AnchorRegistry {
 
   get realizedShapes(): readonly RealizedShape[] {
     return Array.from(this.shapes.values());
+  }
+
+  setForwardRefMode(enabled: boolean): void {
+    this._allowForwardRefs = enabled;
+  }
+
+  clearDiagnostics(): void {
+    this._diagnostics = [];
   }
 
   setViewBox(vb: ViewBox): void {
@@ -177,10 +186,10 @@ export class AnchorRegistry {
       }
     }
 
-    return this.resolve(ref, selfId);
+    return this.resolve(ref, selfId, shapeId);
   }
 
-  resolve(ref: string, selfId?: string): number {
+  resolve(ref: string, selfId?: string, requestingShapeId?: string): number {
     const lookup = (rawId: string, anchor: string): number => {
       const id = rawId === '$self' ? selfId : rawId;
       if (!id) {
@@ -188,10 +197,12 @@ export class AnchorRegistry {
       }
       const shapeAnchors = this.anchors.get(id);
       if (!shapeAnchors) {
+        if (this._allowForwardRefs) return 0;
         throw new Error(`Anchor reference "#${id}.${anchor}": shape "${id}" not found. Is it defined before this shape?`);
       }
       const value = shapeAnchors[anchor];
       if (value === undefined) {
+        if (this._allowForwardRefs) return 0;
         throw new Error(`Anchor reference "#${id}.${anchor}": anchor "${anchor}" not found on shape "${id}".`);
       }
       if (typeof value !== 'number') {
@@ -203,14 +214,16 @@ export class AnchorRegistry {
     return parseAndEvaluate(ref, lookup);
   }
 
-  resolvePoint(ref: string): Point2D {
+  resolvePoint(ref: string, requestingShapeId?: string): Point2D {
     const { id, anchor } = parseRef(ref);
     const shapeAnchors = this.anchors.get(id);
     if (!shapeAnchors) {
+      if (this._allowForwardRefs) return { x: 0, y: 0 };
       throw new Error(`Anchor reference "#${id}.${anchor}": shape "${id}" not found. Is it defined before this shape?`);
     }
     const value = shapeAnchors[anchor];
     if (value === undefined) {
+      if (this._allowForwardRefs) return { x: 0, y: 0 };
       throw new Error(`Anchor reference "#${id}.${anchor}": anchor "${anchor}" not found on shape "${id}".`);
     }
     if (typeof value === 'number') {
@@ -227,6 +240,7 @@ export class AnchorRegistry {
 }
 
 const SolverContext = createContext<AnchorRegistry | null>(null);
+const RenderPhaseContext = createContext<'register' | 'render'>('render');
 
 export interface SolverProviderProps {
   viewBox?: ViewBox;
@@ -244,15 +258,29 @@ export const SolverProvider: React.FC<SolverProviderProps> = ({ viewBox, childre
   if (registryRef.current === null) {
     registryRef.current = new AnchorRegistry();
   }
-  // Reset on every render so shapes re-register fresh anchors
+  // Reset on every render; two-pass rendering handles forward refs.
   registryRef.current.reset();
   if (viewBox) {
     registryRef.current.setViewBox(viewBox);
   }
 
+  const PhasePass: React.FC<{ phase: 'register' | 'render'; children: React.ReactNode }> = ({ phase, children }) => {
+    const registry = registryRef.current!;
+    registry.setForwardRefMode(phase === 'register');
+    if (phase === 'render') {
+      registry.clearDiagnostics();
+    }
+    return (
+      <RenderPhaseContext.Provider value={phase}>
+        {children}
+      </RenderPhaseContext.Provider>
+    );
+  };
+
   return (
     <SolverContext.Provider value={registryRef.current}>
-      {children}
+      <PhasePass phase="register">{children}</PhasePass>
+      <PhasePass phase="render">{children}</PhasePass>
     </SolverContext.Provider>
   );
 };
@@ -262,6 +290,10 @@ export const SolverProvider: React.FC<SolverProviderProps> = ({ viewBox, childre
  */
 export function useSolver(): AnchorRegistry | null {
   return useContext(SolverContext);
+}
+
+export function useRenderPhase(): 'register' | 'render' {
+  return useContext(RenderPhaseContext);
 }
 
 /**

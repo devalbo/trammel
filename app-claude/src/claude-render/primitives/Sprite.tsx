@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { SolverProvider, useSolver } from './SolverContext';
+import { SolverProvider, useRenderPhase, useSolver } from './SolverContext';
 
 export interface SpriteProps {
   viewBox: string;
@@ -13,8 +13,10 @@ export interface SpriteProps {
  */
 const DiagnosticsLogger: React.FC = () => {
   const solver = useSolver();
+  const phase = useRenderPhase();
 
   useEffect(() => {
+    if (phase !== 'render') return;
     if (!solver) return;
     for (const d of solver.diagnostics) {
       if (d.level === 'error') {

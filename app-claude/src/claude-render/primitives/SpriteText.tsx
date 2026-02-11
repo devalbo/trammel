@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRenderPhase } from './SolverContext';
 
 export interface SpriteTextProps {
   id?: string;
@@ -25,9 +26,14 @@ export const SpriteText: React.FC<SpriteTextProps> = ({
   children,
   rotation,
 }) => {
+  const phase = useRenderPhase();
   const transform = rotation
     ? `rotate(${rotation}, ${x}, ${y})`
     : undefined;
+
+  if (phase === 'register') {
+    return null;
+  }
 
   return (
     <text

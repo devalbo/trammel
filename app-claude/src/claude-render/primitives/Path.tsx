@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRenderPhase } from './SolverContext';
 
 export interface PathProps {
   id?: string;
@@ -34,9 +35,14 @@ export const Path: React.FC<PathProps> = ({
   strokeWidth,
   rotation,
 }) => {
+  const phase = useRenderPhase();
   const transform = rotation && d
     ? (() => { const { cx, cy } = pathCenter(d); return `rotate(${rotation}, ${cx}, ${cy})`; })()
     : undefined;
+
+  if (phase === 'register') {
+    return null;
+  }
 
   return (
     <path

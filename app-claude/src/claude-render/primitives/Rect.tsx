@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { useSolver } from './SolverContext';
+import { useRenderPhase, useSolver } from './SolverContext';
 
 export interface RectProps {
   id?: string;
@@ -29,7 +29,7 @@ function resolveScalar(
   if (value === undefined) return undefined;
   if (typeof value === 'number') return value;
   if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
-  return solver.resolve(value, selfId);
+  return solver.resolve(value, selfId, selfId);
 }
 
 function resolveScalarWithAxisCheck(
@@ -43,6 +43,18 @@ function resolveScalarWithAxisCheck(
   if (typeof value === 'number') return value;
   if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
   return solver.resolveWithAxisCheck(value, expectedAxis, forProp, shapeId, shapeId);
+}
+
+function rotatePoint(px: number, py: number, pivotX: number, pivotY: number, rotationDeg: number): { x: number; y: number } {
+  const rad = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = px - pivotX;
+  const dy = py - pivotY;
+  return {
+    x: Math.round((pivotX + dx * cos - dy * sin) * 100) / 100,
+    y: Math.round((pivotY + dx * sin + dy * cos) * 100) / 100,
+  };
 }
 
 export const Rect: React.FC<RectProps> = ({
@@ -65,13 +77,14 @@ export const Rect: React.FC<RectProps> = ({
   centerY: centerYProp,
 }) => {
   const solver = useSolver();
+  const phase = useRenderPhase();
   const autoId = useId();
   const id = idProp ?? autoId;
   const isAutoId = idProp === undefined;
   const label = idProp ? `Rect "${idProp}"` : 'unnamed Rect';
 
   // Conflict warnings: detect when explicit prop and virtual prop target the same axis
-  if (solver) {
+  if (solver && phase === 'render') {
     // x-axis conflicts
     const xAxisProps = [
       xProp !== undefined && 'x',
@@ -151,14 +164,45 @@ export const Rect: React.FC<RectProps> = ({
   // Register anchors, bounds, and shape (always, not just when id is explicit)
   if (solver) {
     const bounds = { left: x, right: x + width, top: y, bottom: y + height };
-    solver.register(id, {
-      ...bounds,
-      width,
-      height,
-      centerX: x + width / 2,
-      centerY: y + height / 2,
-      center: { x: x + width / 2, y: y + height / 2 },
-    });
+    const cx = x + width / 2;
+    const cy = y + height / 2;
+    if (rotation) {
+      const corners = [
+        { x, y },
+        { x: x + width, y },
+        { x: x + width, y: y + height },
+        { x, y: y + height },
+      ];
+      const [tl, tr, br, bl] = corners.map(c => rotatePoint(c.x, c.y, cx, cy, rotation));
+      solver.register(id, {
+        width,
+        height,
+        centerX: cx,
+        centerY: cy,
+        center: { x: cx, y: cy },
+        left: Math.min(tl.x, tr.x, br.x, bl.x),
+        right: Math.max(tl.x, tr.x, br.x, bl.x),
+        top: Math.min(tl.y, tr.y, br.y, bl.y),
+        bottom: Math.max(tl.y, tr.y, br.y, bl.y),
+        topLeft: tl,
+        topRight: tr,
+        bottomRight: br,
+        bottomLeft: bl,
+      });
+    } else {
+      solver.register(id, {
+        ...bounds,
+        width,
+        height,
+        centerX: cx,
+        centerY: cy,
+        center: { x: cx, y: cy },
+        topLeft: { x, y },
+        topRight: { x: x + width, y },
+        bottomRight: { x: x + width, y: y + height },
+        bottomLeft: { x, y: y + height },
+      });
+    }
 
     if (rotation) {
       const corners = [
@@ -183,6 +227,10 @@ export const Rect: React.FC<RectProps> = ({
   const transform = rotation
     ? `rotate(${rotation}, ${x + width / 2}, ${y + height / 2})`
     : undefined;
+
+  if (phase === 'register') {
+    return null;
+  }
 
   return (
     <rect

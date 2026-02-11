@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { useSolver } from './SolverContext';
+import { useRenderPhase, useSolver } from './SolverContext';
 
 export interface Point2D {
   x: number;
@@ -13,13 +13,30 @@ export interface LineProps {
   stroke?: string;
   strokeWidth?: number;
   rotation?: number;
+  style?: React.CSSProperties;
 }
 
-function resolvePoint(value: Point2D | string | undefined, solver: ReturnType<typeof useSolver>): Point2D | undefined {
+function resolvePoint(
+  value: Point2D | string | undefined,
+  solver: ReturnType<typeof useSolver>,
+  shapeId?: string,
+): Point2D | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== 'string') return value;
   if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
-  return solver.resolvePoint(value);
+  return solver.resolvePoint(value, shapeId);
+}
+
+function rotatePoint(pt: Point2D, pivotX: number, pivotY: number, rotationDeg: number): Point2D {
+  const rad = (rotationDeg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = pt.x - pivotX;
+  const dy = pt.y - pivotY;
+  return {
+    x: Math.round((pivotX + dx * cos - dy * sin) * 100) / 100,
+    y: Math.round((pivotY + dx * sin + dy * cos) * 100) / 100,
+  };
 }
 
 export const Line: React.FC<LineProps> = ({
@@ -29,14 +46,16 @@ export const Line: React.FC<LineProps> = ({
   stroke,
   strokeWidth,
   rotation,
+  style,
 }) => {
   const solver = useSolver();
+  const phase = useRenderPhase();
   const autoId = useId();
   const id = idProp ?? autoId;
   const isAutoId = idProp === undefined;
 
-  const start = resolvePoint(startProp, solver);
-  const end = resolvePoint(endProp, solver);
+  const start = resolvePoint(startProp, solver, id);
+  const end = resolvePoint(endProp, solver, id);
 
   // Register anchors, bounds, and shape (always, not just when id is explicit)
   if (solver && start && end) {
@@ -48,14 +67,18 @@ export const Line: React.FC<LineProps> = ({
       top: Math.min(start.y, end.y),
       bottom: Math.max(start.y, end.y),
     };
+    const s = rotation ? rotatePoint(start, midX, midY, rotation) : start;
+    const e = rotation ? rotatePoint(end, midX, midY, rotation) : end;
     solver.register(id, {
-      startX: start.x,
-      startY: start.y,
-      endX: end.x,
-      endY: end.y,
-      centerX: midX,
-      centerY: midY,
-      center: { x: midX, y: midY },
+      startX: s.x,
+      startY: s.y,
+      endX: e.x,
+      endY: e.y,
+      centerX: (s.x + e.x) / 2,
+      centerY: (s.y + e.y) / 2,
+      center: { x: (s.x + e.x) / 2, y: (s.y + e.y) / 2 },
+      start: { x: s.x, y: s.y },
+      end: { x: e.x, y: e.y },
     });
 
     if (rotation) {
@@ -82,6 +105,10 @@ export const Line: React.FC<LineProps> = ({
     ? `rotate(${rotation}, ${cx}, ${cy})`
     : undefined;
 
+  if (phase === 'register') {
+    return null;
+  }
+
   return (
     <line
       id={idProp}
@@ -92,6 +119,7 @@ export const Line: React.FC<LineProps> = ({
       stroke={stroke}
       strokeWidth={strokeWidth}
       transform={transform}
+      style={style}
     />
   );
 };

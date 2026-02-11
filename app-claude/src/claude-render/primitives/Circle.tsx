@@ -1,5 +1,5 @@
 import React, { useId } from 'react';
-import { useSolver } from './SolverContext';
+import { useRenderPhase, useSolver } from './SolverContext';
 
 export interface CircleProps {
   id?: string;
@@ -12,11 +12,15 @@ export interface CircleProps {
   rotation?: number;
 }
 
-function resolveScalar(value: number | string | undefined, solver: ReturnType<typeof useSolver>): number | undefined {
+function resolveScalar(
+  value: number | string | undefined,
+  solver: ReturnType<typeof useSolver>,
+  shapeId?: string,
+): number | undefined {
   if (value === undefined) return undefined;
   if (typeof value === 'number') return value;
   if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
-  return solver.resolve(value);
+  return solver.resolve(value, shapeId, shapeId);
 }
 
 export const Circle: React.FC<CircleProps> = ({
@@ -34,8 +38,9 @@ export const Circle: React.FC<CircleProps> = ({
   const id = idProp ?? autoId;
   const isAutoId = idProp === undefined;
 
-  const cx = resolveScalar(centerXProp, solver) ?? 0;
-  const cy = resolveScalar(centerYProp, solver) ?? 0;
+  const phase = useRenderPhase();
+  const cx = resolveScalar(centerXProp, solver, id) ?? 0;
+  const cy = resolveScalar(centerYProp, solver, id) ?? 0;
 
   // Register anchors, bounds, and shape (always, not just when id is explicit)
   if (solver) {
@@ -60,6 +65,10 @@ export const Circle: React.FC<CircleProps> = ({
   const transform = rotation
     ? `rotate(${rotation}, ${cx}, ${cy})`
     : undefined;
+
+  if (phase === 'register') {
+    return null;
+  }
 
   return (
     <circle

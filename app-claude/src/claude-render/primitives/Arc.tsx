@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRenderPhase } from './SolverContext';
 
 export interface ArcProps {
   id?: string;
@@ -52,10 +53,15 @@ export const Arc: React.FC<ArcProps> = ({
   strokeWidth,
   rotation,
 }) => {
+  const phase = useRenderPhase();
   const d = arcPath(center.x, center.y, r, startAngle, endAngle);
   const transform = rotation
     ? `rotate(${rotation}, ${center.x}, ${center.y})`
     : undefined;
+
+  if (phase === 'register') {
+    return null;
+  }
 
   return (
     <path

@@ -1,20 +1,10 @@
 import { Meta } from '@storybook/blocks';
+import * as Stories from './05-VertexReferencePolygon.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 3 — Reference Math/05 Vertex Reference (Polygon)" />
+<Meta of={Stories} />
 
 # 051 — Vertex Reference (Polygon)
-
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
 
 ## Description
 
@@ -51,6 +41,10 @@ Lines connecting each vertex of a hexagon to its center, forming a "spoke" patte
   <Line start="#hex.v5" end="#hex.center" stroke="#95a5a6" strokeWidth={0.5} />
 </Sprite>
 ```
+
+## Default
+
+<LiveCanvas code={Stories.defaultCode} />
 
 ## Dynamic Version (with Array.from)
 

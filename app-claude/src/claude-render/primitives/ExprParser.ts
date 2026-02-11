@@ -96,10 +96,11 @@ export function tokenize(input: string): Token[] {
       }
       i++; // skip '.'
       const anchorStart = i;
-      while (i < input.length && isIdChar(input[i])) i++;
-      if (i === anchorStart) {
+      if (i >= input.length || !isIdChar(input[i])) {
         throw new ParseError(`Expected anchor name after "$self." at position ${i}`, i);
       }
+      i++; // consume first anchor char
+      while (i < input.length && (isIdChar(input[i]) || input[i] === '.')) i++;
       tokens.push({ type: 'SELF_REF', value: input.slice(start, i), pos: start });
       continue;
     }
@@ -118,10 +119,11 @@ export function tokenize(input: string): Token[] {
       }
       i++; // skip '.'
       const anchorStart = i;
-      while (i < input.length && isIdChar(input[i])) i++;
-      if (i === anchorStart) {
+      if (i >= input.length || !isIdChar(input[i])) {
         throw new ParseError(`Expected anchor name after "." at position ${i}`, i);
       }
+      i++; // consume first anchor char
+      while (i < input.length && (isIdChar(input[i]) || input[i] === '.')) i++;
       tokens.push({ type: 'REF', value: input.slice(start, i), pos: start });
       continue;
     }

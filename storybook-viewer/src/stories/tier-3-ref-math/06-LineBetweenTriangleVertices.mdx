@@ -1,20 +1,10 @@
 import { Meta } from '@storybook/blocks';
+import * as Stories from './06-LineBetweenTriangleVertices.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 3 — Reference Math/06 Line Between Triangle Vertices" />
+<Meta of={Stories} />
 
 # 052 — Line Between Triangle Vertices
-
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
 
 ## Description
 
@@ -64,6 +54,10 @@ A line connecting the apex (v2) of one triangle to the base-left vertex (v0) of 
   />
 </Sprite>
 ```
+
+## Default
+
+<LiveCanvas code={Stories.defaultCode} />
 
 ## Resolver Trace
 

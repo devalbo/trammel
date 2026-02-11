@@ -31,6 +31,7 @@ function ShapesProbe({ onRead }: { onRead: (data: { shapes: readonly unknown[]; 
   return null;
 }
 
+
 function DiagnosticAdder() {
   const solver = useSolver();
   if (solver) {
@@ -195,6 +196,21 @@ describe('Primitives', () => {
     expect(shape.id).toBe('c1');
     expect(shape.props.cx).toBe(20);
     expect(shape.props.cy).toBe(30);
+  });
+
+  it('resolves forward references on re-render', async () => {
+    const { container } = render(
+      <SolverProvider viewBox={{ minX: 0, minY: 0, width: 200, height: 200 }}>
+        <Circle id="dot" centerX="#tri.v0.x" centerY="#tri.v0.y" r={4} />
+        <Triangle id="tri" kind="equilateral" sideLength={100} x={50} y={25} />
+      </SolverProvider>,
+    );
+
+    await waitFor(() => {
+      const circle = container.querySelector('circle');
+      expect(circle?.getAttribute('cx')).toBe('50');
+      expect(circle?.getAttribute('cy')).toBe('111.6');
+    });
   });
 
   it('Line resolves point references and registers shape', async () => {

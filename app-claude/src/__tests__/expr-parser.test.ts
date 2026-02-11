@@ -24,6 +24,11 @@ describe('tokenize', () => {
     expect(tokens[0]).toMatchObject({ type: 'REF', value: '#box.right' });
   });
 
+  it('tokenizes a ref with dotted anchors', () => {
+    const tokens = tokenize('#tri.v0.x');
+    expect(tokens[0]).toMatchObject({ type: 'REF', value: '#tri.v0.x' });
+  });
+
   it('tokenizes a ref with hyphens and digits', () => {
     const tokens = tokenize('#my-box2.centerX');
     expect(tokens[0]).toMatchObject({ type: 'REF', value: '#my-box2.centerX' });
@@ -110,6 +115,11 @@ describe('parseExpr', () => {
   it('parses a ref', () => {
     const ast = parseExpr('#box.right');
     expect(ast).toEqual({ type: 'ref', id: 'box', anchor: 'right' });
+  });
+
+  it('parses a ref with dotted anchors', () => {
+    const ast = parseExpr('#tri.v0.x');
+    expect(ast).toEqual({ type: 'ref', id: 'tri', anchor: 'v0.x' });
   });
 
   it('parses a $self ref', () => {
