@@ -24,6 +24,7 @@
     "preview": "cd app-ref && npx vite preview",
     "preview:all": "export BASE_PATH=/dev-preview/ && npm run build && npm run preview",
     "test": "npm --workspaces --if-present test",
+    "test:coverage:all": "vitest --workspace vitest.workspace.ts --run --coverage --coverage.reporter=html --coverage.reporter=text --coverage.reportsDirectory coverage",
     "storybook": "npm run storybook -w storybook-viewer",
     "build-storybook": "npm run build-storybook -w storybook-viewer"
   },

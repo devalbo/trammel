@@ -15,5 +15,10 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     passWithNoTests: true,
+    coverage: {
+      exclude: [
+        'public/app-storybook/**',
+      ],
+    },
   },
 });

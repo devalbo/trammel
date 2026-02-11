@@ -48,6 +48,15 @@ Run a single workspace test:
 npm --workspace app-ref test
 ```
 
+## Coverage
+Generate a single merged HTML coverage report (per folder and per file):
+
+```bash
+npm run test:coverage:all
+```
+
+The report is written to `coverage/index.html`. Coverage excludes `app-ref/public/app-storybook/**`.
+
 ## Build for GitHub Pages
 Local builds use the copy step. CI builds write the bundle directly into `app-ref/public/app-codex`.
 
