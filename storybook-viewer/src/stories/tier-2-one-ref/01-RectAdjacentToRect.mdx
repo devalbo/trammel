@@ -1,45 +1,23 @@
 import { Meta } from '@storybook/blocks';
+import * as Stories from './01-RectAdjacentToRect.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
 
-<Meta title="Tier 2 — One Reference/01 Rect Adjacent to Rect" />
+<Meta of={Stories} />
 
-# 008 — Rect Adjacent to Rect
+# Rect Adjacent to Rect
 
-<div style={{
-  padding: '12px 16px',
-  marginBottom: 24,
-  background: '#fff8e1',
-  border: '1px solid #ffe082',
-  borderRadius: 4,
-  fontSize: 14,
-  color: '#6d4c00',
-}}>
-  **Spec only** — this component is not yet implemented. The syntax below shows the target API.
-</div>
-
-## Description
-
-Two rectangles placed side-by-side. Box B's left edge snaps to Box A's right edge using a reference string. This is the first example requiring the constraint resolver.
+Two rectangles placed side-by-side. Box B's left edge snaps to Box A's right edge using the anchor reference `left="#boxA.right"`.
 
 ## Elements
 
 | Element | Type | Purpose |
 |---------|------|---------|
-| `<Sprite>` | Container | Root |
 | `<Rect>` #boxA | Primitive | The anchor (absolute position) |
 | `<Rect>` #boxB | Primitive | The dependent (positioned by reference) |
 
-## Constraints Used
+## Default
 
-| Constraint | Expression | Resolution |
-|---|---|---|
-| Positional reference | `left="#boxA.right"` | Resolver reads boxA's right anchor (x + width = 80), assigns as boxB's x |
-| Positional reference | `top="#boxA.top"` | Resolver reads boxA's top anchor (y = 20), assigns as boxB's y |
-
-## Syntax
-
-```jsx
-<Sprite viewBox="0 0 200 100">
-
+<LiveCanvas code={`<Sprite viewBox="0 0 200 100">
   <Rect
     id="boxA"
     x={10}
@@ -48,7 +26,6 @@ Two rectangles placed side-by-side. Box B's left edge snaps to Box A's right edg
     height={50}
     fill="#4a90d9"
   />
-
   <Rect
     id="boxB"
     left="#boxA.right"
@@ -57,26 +34,13 @@ Two rectangles placed side-by-side. Box B's left edge snaps to Box A's right edg
     height={50}
     fill="#d94a4a"
   />
-
-</Sprite>
-```
+</Sprite>`} />
 
 ## Resolver Trace
 
-1. boxA resolves first (no dependencies): `\{ x: 10, y: 20, w: 70, h: 50 \}`
-2. boxA registers anchors: `right = 10 + 70 = 80`, `top = 20`
-3. boxB reads `#boxA.right` → `80`, assigns to `left` → `x = 80`
-4. boxB reads `#boxA.top` → `20`, assigns to `top` → `y = 20`
-5. boxB resolves: `\{ x: 80, y: 20, w: 70, h: 50 \}`
-
-## Expected SVG Output
-
-```svg
-<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
-  <rect x="10" y="20" width="70" height="50" fill="#4a90d9" />
-  <rect x="80" y="20" width="70" height="50" fill="#d94a4a" />
-</svg>
-```
+1. boxA resolves: x=10, y=20, w=70, h=50 — anchors: right=80, top=20
+2. boxB reads `#boxA.right` = 80, `#boxA.top` = 20
+3. boxB resolves: x=80, y=20, w=70, h=50
 
 ## What This Validates
 
