@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRenderPhase } from './SolverContext';
+import { useRenderPhase, useSolver } from './SolverContext';
 
 export interface ArcProps {
   id?: string;
@@ -10,7 +10,7 @@ export interface ArcProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  rotation?: number;
+  rotation?: number | string;
 }
 
 function toRad(deg: number): number {
@@ -54,10 +54,26 @@ export const Arc: React.FC<ArcProps> = ({
   rotation,
 }) => {
   const phase = useRenderPhase();
-  const d = arcPath(center.x, center.y, r, startAngle, endAngle);
-  const transform = rotation
-    ? `rotate(${rotation}, ${center.x}, ${center.y})`
+  const solver = useSolver();
+  if (rotation !== undefined && typeof rotation === 'string' && !solver) {
+    throw new Error(`Cannot resolve reference "${rotation}": no SolverProvider found.`);
+  }
+  const rot = rotation !== undefined
+    ? (typeof rotation === 'number' ? rotation : (solver ? solver.resolve(rotation, id, id) : undefined))
     : undefined;
+  const d = arcPath(center.x, center.y, r, startAngle, endAngle);
+  const transform = rot
+    ? `rotate(${rot}, ${center.x}, ${center.y})`
+    : undefined;
+
+  if (solver && id) {
+    solver.register(id, {
+      centerX: center.x,
+      centerY: center.y,
+      center: { x: center.x, y: center.y },
+      rotation: rot ?? 0,
+    });
+  }
 
   if (phase === 'register') {
     return null;

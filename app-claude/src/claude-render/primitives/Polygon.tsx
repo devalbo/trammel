@@ -11,7 +11,7 @@ export interface PolygonProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  rotation?: number;
+  rotation?: number | string;
 }
 
 function round(n: number): number {
@@ -70,11 +70,20 @@ export const Polygon: React.FC<PolygonProps> = ({
 }) => {
   const solver = useSolver();
   const phase = useRenderPhase();
+  if (rotation !== undefined && typeof rotation === 'string' && !solver) {
+    throw new Error(`Cannot resolve reference "${rotation}": no SolverProvider found.`);
+  }
   // r (circumradius) takes precedence; otherwise derive from sideLength
   const circumradius = r ?? (sideLength ?? 40) / (2 * Math.sin(Math.PI / sides));
   const { points, vertices } = computeRegularPolygon(sides, circumradius, centerX, centerY);
+  const rot = rotation !== undefined
+    ? (typeof rotation === 'number' ? rotation : (solver ? solver.resolve(rotation, id, id) : undefined))
+    : undefined;
+  if (rotation !== undefined && typeof rotation === 'string' && !solver) {
+    throw new Error(`Cannot resolve reference "${rotation}": no SolverProvider found.`);
+  }
   const transform = rotation
-    ? `rotate(${rotation}, ${centerX}, ${centerY})`
+    ? `rotate(${rot ?? rotation}, ${centerX}, ${centerY})`
     : undefined;
 
   if (solver && id) {
@@ -82,8 +91,9 @@ export const Polygon: React.FC<PolygonProps> = ({
       centerX,
       centerY,
       center: { x: centerX, y: centerY },
+      rotation: rot ?? 0,
     };
-    const verts = rotation ? vertices.map(v => rotatePoint(v, centerX, centerY, rotation)) : vertices;
+    const verts = rot ? vertices.map(v => rotatePoint(v, centerX, centerY, rot)) : vertices;
     verts.forEach((v, i) => {
       anchorRecord[`v${i}`] = v;
       anchorRecord[`v${i}.x`] = v.x;

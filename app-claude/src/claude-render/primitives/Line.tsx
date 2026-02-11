@@ -12,7 +12,7 @@ export interface LineProps {
   end?: Point2D | string;
   stroke?: string;
   strokeWidth?: number;
-  rotation?: number;
+  rotation?: number | string;
   style?: React.CSSProperties;
 }
 
@@ -56,6 +56,12 @@ export const Line: React.FC<LineProps> = ({
 
   const start = resolvePoint(startProp, solver, id);
   const end = resolvePoint(endProp, solver, id);
+  const rot = rotation !== undefined
+    ? (typeof rotation === 'number' ? rotation : (solver ? solver.resolve(rotation, id, id) : undefined))
+    : undefined;
+  if (rotation !== undefined && typeof rotation === 'string' && !solver) {
+    throw new Error(`Cannot resolve reference "${rotation}": no SolverProvider found.`);
+  }
 
   // Register anchors, bounds, and shape (always, not just when id is explicit)
   if (solver && start && end) {
@@ -67,8 +73,8 @@ export const Line: React.FC<LineProps> = ({
       top: Math.min(start.y, end.y),
       bottom: Math.max(start.y, end.y),
     };
-    const s = rotation ? rotatePoint(start, midX, midY, rotation) : start;
-    const e = rotation ? rotatePoint(end, midX, midY, rotation) : end;
+    const s = rot ? rotatePoint(start, midX, midY, rot) : start;
+    const e = rot ? rotatePoint(end, midX, midY, rot) : end;
     solver.register(id, {
       startX: s.x,
       startY: s.y,
@@ -79,14 +85,15 @@ export const Line: React.FC<LineProps> = ({
       center: { x: (s.x + e.x) / 2, y: (s.y + e.y) / 2 },
       start: { x: s.x, y: s.y },
       end: { x: e.x, y: e.y },
+      rotation: rot ?? 0,
     });
 
-    if (rotation) {
+    if (rot) {
       const corners = [
         { x: start.x, y: start.y },
         { x: end.x, y: end.y },
       ];
-      solver.checkRotatedBounds(id, corners, rotation, midX, midY);
+      solver.checkRotatedBounds(id, corners, rot, midX, midY);
     } else {
       solver.checkBounds(id, bounds);
     }
@@ -95,14 +102,14 @@ export const Line: React.FC<LineProps> = ({
       type: 'line',
       id,
       autoId: isAutoId,
-      props: { x1: start.x, y1: start.y, x2: end.x, y2: end.y, stroke, strokeWidth, rotation },
+      props: { x1: start.x, y1: start.y, x2: end.x, y2: end.y, stroke, strokeWidth, rotation: rot ?? rotation },
     });
   }
 
   const cx = start && end ? (start.x + end.x) / 2 : 0;
   const cy = start && end ? (start.y + end.y) / 2 : 0;
-  const transform = rotation
-    ? `rotate(${rotation}, ${cx}, ${cy})`
+  const transform = rot
+    ? `rotate(${rot}, ${cx}, ${cy})`
     : undefined;
 
   if (phase === 'register') {

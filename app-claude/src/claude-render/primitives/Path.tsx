@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRenderPhase } from './SolverContext';
+import { useRenderPhase, useSolver } from './SolverContext';
 
 export interface PathProps {
   id?: string;
@@ -8,7 +8,7 @@ export interface PathProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  rotation?: number;
+  rotation?: number | string;
 }
 
 /** Extract numeric coordinates from a path `d` string and return the bounding box center. */
@@ -36,9 +36,26 @@ export const Path: React.FC<PathProps> = ({
   rotation,
 }) => {
   const phase = useRenderPhase();
-  const transform = rotation && d
-    ? (() => { const { cx, cy } = pathCenter(d); return `rotate(${rotation}, ${cx}, ${cy})`; })()
+  const solver = useSolver();
+  if (rotation !== undefined && typeof rotation === 'string' && !solver) {
+    throw new Error(`Cannot resolve reference "${rotation}": no SolverProvider found.`);
+  }
+  const rot = rotation !== undefined
+    ? (typeof rotation === 'number' ? rotation : (solver ? solver.resolve(rotation, id, id) : undefined))
     : undefined;
+  const center = d ? pathCenter(d) : { cx: 0, cy: 0 };
+  const transform = rotation && d
+    ? `rotate(${rot ?? rotation}, ${center.cx}, ${center.cy})`
+    : undefined;
+
+  if (solver && id) {
+    solver.register(id, {
+      centerX: center.cx,
+      centerY: center.cy,
+      center: { x: center.cx, y: center.cy },
+      rotation: rot ?? 0,
+    });
+  }
 
   if (phase === 'register') {
     return null;

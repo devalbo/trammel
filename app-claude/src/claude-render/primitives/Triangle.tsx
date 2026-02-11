@@ -22,7 +22,7 @@ export interface TriangleProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  rotation?: number;
+  rotation?: number | string;
 }
 
 interface Verts {
@@ -109,6 +109,9 @@ export const Triangle: React.FC<TriangleProps> = ({
 }) => {
   const solver = useSolver();
   const phase = useRenderPhase();
+  if (rotation !== undefined && typeof rotation === 'string' && !solver) {
+    throw new Error(`Cannot resolve reference "${rotation}": no SolverProvider found.`);
+  }
   let verts: Verts;
 
   if (vertices) {
@@ -132,15 +135,18 @@ export const Triangle: React.FC<TriangleProps> = ({
     verts = computeEquilateral(sideLength, x, y);
   }
 
+  const rot = rotation !== undefined
+    ? (typeof rotation === 'number' ? rotation : (solver ? solver.resolve(rotation, id, id) : undefined))
+    : undefined;
   const transform = rotation
-    ? `rotate(${rotation}, ${verts.cx}, ${verts.cy})`
+    ? `rotate(${rot ?? rotation}, ${verts.cx}, ${verts.cy})`
     : undefined;
 
   if (solver && id) {
     const baseVertices = verts.vertices;
     const pivot = { x: verts.cx, y: verts.cy };
-    const [v0, v1, v2] = rotation
-      ? baseVertices.map(v => rotatePoint(v, pivot, rotation)) as [Point2DValue, Point2DValue, Point2DValue]
+    const [v0, v1, v2] = rot
+      ? baseVertices.map(v => rotatePoint(v, pivot, rot)) as [Point2DValue, Point2DValue, Point2DValue]
       : baseVertices;
     solver.register(id, {
       v0,
@@ -152,6 +158,7 @@ export const Triangle: React.FC<TriangleProps> = ({
       'v1.y': v1.y,
       'v2.x': v2.x,
       'v2.y': v2.y,
+      rotation: rot ?? 0,
       centerX: verts.cx,
       centerY: verts.cy,
       center: { x: verts.cx, y: verts.cy },

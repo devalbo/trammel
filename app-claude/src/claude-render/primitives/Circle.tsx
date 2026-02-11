@@ -9,7 +9,7 @@ export interface CircleProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  rotation?: number;
+  rotation?: number | string;
 }
 
 function resolveScalar(
@@ -41,6 +41,7 @@ export const Circle: React.FC<CircleProps> = ({
   const phase = useRenderPhase();
   const cx = resolveScalar(centerXProp, solver, id) ?? 0;
   const cy = resolveScalar(centerYProp, solver, id) ?? 0;
+  const rot = resolveScalar(rotation, solver, id);
 
   // Register anchors, bounds, and shape (always, not just when id is explicit)
   if (solver) {
@@ -48,6 +49,7 @@ export const Circle: React.FC<CircleProps> = ({
     solver.register(id, {
       centerX: cx,
       centerY: cy,
+      rotation: rot ?? 0,
       ...bounds,
       center: { x: cx, y: cy },
     });
@@ -58,12 +60,12 @@ export const Circle: React.FC<CircleProps> = ({
       type: 'circle',
       id,
       autoId: isAutoId,
-      props: { cx, cy, r, fill, stroke, strokeWidth, rotation },
+      props: { cx, cy, r, fill, stroke, strokeWidth, rotation: rot ?? rotation },
     });
   }
 
-  const transform = rotation
-    ? `rotate(${rotation}, ${cx}, ${cy})`
+  const transform = rot
+    ? `rotate(${rot}, ${cx}, ${cy})`
     : undefined;
 
   if (phase === 'register') {

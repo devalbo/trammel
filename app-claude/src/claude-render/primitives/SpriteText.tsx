@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRenderPhase } from './SolverContext';
+import { useRenderPhase, useSolver } from './SolverContext';
 
 export interface SpriteTextProps {
   id?: string;
@@ -11,7 +11,7 @@ export interface SpriteTextProps {
   fill?: string;
   textAnchor?: string;
   children?: React.ReactNode;
-  rotation?: number;
+  rotation?: number | string;
 }
 
 export const SpriteText: React.FC<SpriteTextProps> = ({
@@ -27,9 +27,27 @@ export const SpriteText: React.FC<SpriteTextProps> = ({
   rotation,
 }) => {
   const phase = useRenderPhase();
-  const transform = rotation
-    ? `rotate(${rotation}, ${x}, ${y})`
+  const solver = useSolver();
+  if (rotation !== undefined && typeof rotation === 'string' && !solver) {
+    throw new Error(`Cannot resolve reference "${rotation}": no SolverProvider found.`);
+  }
+  const rot = rotation !== undefined
+    ? (typeof rotation === 'number' ? rotation : (solver ? solver.resolve(rotation, id, id) : undefined))
     : undefined;
+  const transform = rotation
+    ? `rotate(${rot ?? rotation}, ${x}, ${y})`
+    : undefined;
+
+  if (solver && id) {
+    solver.register(id, {
+      x,
+      y,
+      centerX: x,
+      centerY: y,
+      center: { x, y },
+      rotation: rot ?? 0,
+    });
+  }
 
   if (phase === 'register') {
     return null;

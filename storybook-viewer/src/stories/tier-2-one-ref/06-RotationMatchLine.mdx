@@ -1,0 +1,30 @@
+import { Meta } from '@storybook/blocks';
+import * as Stories from './06-RotationMatchLine.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
+
+<Meta of={Stories} />
+
+# Rotation Match (Line)
+
+Line uses a triangle's rotation via `rotation="#tri.rotation"`.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Triangle>` #tri | Primitive | Source rotation |
+| `<Line>` #ln | Primitive | Matches rotation |
+
+## Default
+
+<LiveCanvas code={Stories.defaultCode} />
+
+## Resolver Trace
+
+1. `tri.rotation = -20`
+2. `ln.rotation` reads `#tri.rotation` → -20
+
+## What This Validates
+
+- `rotation` can be referenced cross‑shape
+- Line supports reference rotation

@@ -6,6 +6,9 @@ import {
   Line,
   Polygon,
   Triangle,
+  Arc,
+  Path,
+  SpriteText,
   SolverProvider,
   useRenderPhase,
   useSolver,
@@ -27,6 +30,11 @@ function ResolveProbe({ onRead }: { onRead: (data: Record<string, { x: number; y
       polyV0Rot: solver.resolvePoint('#p1.v0'),
       triV0: solver.resolvePoint('#t0.v0'),
       triV0Rot: solver.resolvePoint('#t1.v0'),
+      rect2TopLeft: solver.resolvePoint('#r2.topLeft'),
+      rect3TopLeft: solver.resolvePoint('#r3.topLeft'),
+      arcRotation: { x: solver.resolve('#arc.rotation'), y: 0 },
+      pathRotation: { x: solver.resolve('#path.rotation'), y: 0 },
+      textRotation: { x: solver.resolve('#txt.rotation'), y: 0 },
     });
   }, [solver, phase, onRead]);
   return null;
@@ -43,11 +51,16 @@ describe('shape rotation anchors', () => {
     render(
       <SolverProvider viewBox={{ minX: -50, minY: -50, width: 100, height: 100 }}>
         <Rect id="r" x={0} y={0} width={10} height={20} rotation={90} />
+        <Rect id="r2" x={0} y={0} width={10} height={20} rotation="#r.rotation" />
+        <SpriteText id="txt" x={0} y={0} rotation={90}>T</SpriteText>
+        <Rect id="r3" x={0} y={0} width={10} height={20} rotation="#txt.rotation" />
         <Line id="l" start={{ x: 0, y: 0 }} end={{ x: 10, y: 0 }} rotation={90} />
         <Polygon id="p0" sides={4} r={10} centerX={0} centerY={0} />
         <Polygon id="p1" sides={4} r={10} centerX={0} centerY={0} rotation={90} />
         <Triangle id="t0" kind="equilateral" sideLength={100} x={50} y={25} />
         <Triangle id="t1" kind="equilateral" sideLength={100} x={50} y={25} rotation={90} />
+        <Arc id="arc" center={{ x: 0, y: 0 }} r={10} rotation={15} />
+        <Path id="path" d="M 0 0 L 10 0 L 10 10" rotation={20} />
         <ResolveProbe onRead={(data) => { snapshot = data; }} />
       </SolverProvider>,
     );
@@ -60,6 +73,8 @@ describe('shape rotation anchors', () => {
     expectPointClose(snapshot!.rectTopRight, { x: 15, y: 15 });
     expectPointClose(snapshot!.rectBottomRight, { x: -5, y: 15 });
     expectPointClose(snapshot!.rectBottomLeft, { x: -5, y: 5 });
+    expectPointClose(snapshot!.rect2TopLeft, { x: 15, y: 5 });
+    expectPointClose(snapshot!.rect3TopLeft, { x: 15, y: 5 });
 
     expectPointClose(snapshot!.lineStart, { x: 5, y: -5 });
     expectPointClose(snapshot!.lineEnd, { x: 5, y: 5 });
@@ -69,5 +84,9 @@ describe('shape rotation anchors', () => {
 
     expectPointClose(snapshot!.triV0, { x: 50, y: 111.6 });
     expectPointClose(snapshot!.triV0Rot, { x: 71.13, y: 32.73 });
+
+    expect((snapshot!.arcRotation as { x: number }).x).toBeCloseTo(15, 1);
+    expect((snapshot!.pathRotation as { x: number }).x).toBeCloseTo(20, 1);
+    expect((snapshot!.textRotation as { x: number }).x).toBeCloseTo(90, 1);
   });
 });

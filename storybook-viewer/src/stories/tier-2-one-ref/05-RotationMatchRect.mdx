@@ -1,0 +1,30 @@
+import { Meta } from '@storybook/blocks';
+import * as Stories from './05-RotationMatchRect.stories';
+import { LiveCanvas } from '../../components/LiveCanvas';
+
+<Meta of={Stories} />
+
+# Rotation Match (Rect)
+
+Rect B matches Rect A's rotation using `rotation="#a.rotation"`.
+
+## Elements
+
+| Element | Type | Purpose |
+|---------|------|---------|
+| `<Rect>` #a | Primitive | Source rotation |
+| `<Rect>` #b | Primitive | Matches rotation |
+
+## Default
+
+<LiveCanvas code={Stories.defaultCode} />
+
+## Resolver Trace
+
+1. `a.rotation = 25`
+2. `b.rotation` reads `#a.rotation` → 25
+
+## What This Validates
+
+- `rotation` can be referenced from another shape
+- Rotation anchors are exposed on Rect

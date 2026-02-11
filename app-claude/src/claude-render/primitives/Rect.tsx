@@ -12,7 +12,7 @@ export interface RectProps {
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
-  rotation?: number;
+  rotation?: number | string;
   left?: number | string;
   right?: number | string;
   top?: number | string;
@@ -43,6 +43,17 @@ function resolveScalarWithAxisCheck(
   if (typeof value === 'number') return value;
   if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
   return solver.resolveWithAxisCheck(value, expectedAxis, forProp, shapeId, shapeId);
+}
+
+function resolveRotation(
+  value: number | string | undefined,
+  solver: ReturnType<typeof useSolver>,
+  shapeId: string,
+): number | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value === 'number') return value;
+  if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
+  return solver.resolve(value, shapeId, shapeId);
 }
 
 function rotatePoint(px: number, py: number, pivotX: number, pivotY: number, rotationDeg: number): { x: number; y: number } {
@@ -132,6 +143,7 @@ export const Rect: React.FC<RectProps> = ({
   const bottom = resolveScalarWithAxisCheck(bottomProp, solver, 'y', 'bottom', id);
   const centerX = resolveScalarWithAxisCheck(centerXProp, solver, 'x', 'centerX', id);
   const centerY = resolveScalarWithAxisCheck(centerYProp, solver, 'y', 'centerY', id);
+  const resolvedRotation = resolveRotation(rotation, solver, id);
 
   // Derive x: explicit x wins, then left, right, centerX
   let x: number;
@@ -166,17 +178,18 @@ export const Rect: React.FC<RectProps> = ({
     const bounds = { left: x, right: x + width, top: y, bottom: y + height };
     const cx = x + width / 2;
     const cy = y + height / 2;
-    if (rotation) {
+    if (resolvedRotation) {
       const corners = [
         { x, y },
         { x: x + width, y },
         { x: x + width, y: y + height },
         { x, y: y + height },
       ];
-      const [tl, tr, br, bl] = corners.map(c => rotatePoint(c.x, c.y, cx, cy, rotation));
+      const [tl, tr, br, bl] = corners.map(c => rotatePoint(c.x, c.y, cx, cy, resolvedRotation));
       solver.register(id, {
         width,
         height,
+        rotation: resolvedRotation,
         centerX: cx,
         centerY: cy,
         center: { x: cx, y: cy },
@@ -194,6 +207,7 @@ export const Rect: React.FC<RectProps> = ({
         ...bounds,
         width,
         height,
+        rotation: resolvedRotation ?? 0,
         centerX: cx,
         centerY: cy,
         center: { x: cx, y: cy },
@@ -204,14 +218,14 @@ export const Rect: React.FC<RectProps> = ({
       });
     }
 
-    if (rotation) {
+    if (resolvedRotation) {
       const corners = [
         { x, y },
         { x: x + width, y },
         { x: x + width, y: y + height },
         { x, y: y + height },
       ];
-      solver.checkRotatedBounds(id, corners, rotation, x + width / 2, y + height / 2);
+      solver.checkRotatedBounds(id, corners, resolvedRotation, x + width / 2, y + height / 2);
     } else {
       solver.checkBounds(id, bounds);
     }
@@ -220,12 +234,12 @@ export const Rect: React.FC<RectProps> = ({
       type: 'rect',
       id,
       autoId: isAutoId,
-      props: { x, y, width, height, rx, ry, fill, stroke, strokeWidth, rotation },
+      props: { x, y, width, height, rx, ry, fill, stroke, strokeWidth, rotation: resolvedRotation ?? rotation },
     });
   }
 
-  const transform = rotation
-    ? `rotate(${rotation}, ${x + width / 2}, ${y + height / 2})`
+  const transform = resolvedRotation
+    ? `rotate(${resolvedRotation}, ${x + width / 2}, ${y + height / 2})`
     : undefined;
 
   if (phase === 'register') {
