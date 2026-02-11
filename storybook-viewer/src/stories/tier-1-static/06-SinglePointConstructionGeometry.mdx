@@ -25,19 +25,7 @@ An invisible point used as construction geometry. It renders nothing to SVG but 
 
 Point renders nothing. The circle uses explicit coordinates here; reference strings (`#pivot.x`) will work once the solver context is implemented.
 
-<LiveCanvas code={`<Sprite viewBox="0 0 200 200">
-  <Point id="pivot" at={{ x: 100, y: 100 }} />
-  <Circle
-    id="ring"
-    centerX={100}
-    centerY={100}
-    r={30}
-    fill="none"
-    stroke="#333"
-    strokeWidth={2}
-    rotation={20}
-  />
-</Sprite>`} />
+<LiveCanvas code={SinglePointStories.defaultCode} />
 
 ## What This Validates
 

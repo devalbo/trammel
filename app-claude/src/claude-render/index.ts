@@ -34,5 +34,5 @@ export type { PentagonProps } from './primitives/Pentagon';
 export { Arc } from './primitives/Arc';
 export type { ArcProps } from './primitives/Arc';
 
-export { SolverProvider, useSolver, useSolverDiagnostics, AnchorRegistry, parseRef } from './primitives/SolverContext';
-export type { SolverProviderProps, SolverDiagnostic, DiagnosticLevel, ViewBox } from './primitives/SolverContext';
+export { SolverProvider, useSolver, useSolverDiagnostics, useSolverShapes, AnchorRegistry, parseRef } from './primitives/SolverContext';
+export type { SolverProviderProps, SolverDiagnostic, DiagnosticLevel, ViewBox, RealizedShape } from './primitives/SolverContext';

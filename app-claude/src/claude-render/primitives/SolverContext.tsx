@@ -20,6 +20,16 @@ export interface ViewBox {
   height: number;
 }
 
+export interface RealizedShape {
+  type: 'rect' | 'circle' | 'line';
+  id: string;
+  autoId: boolean;
+  props: Record<string, unknown>;
+}
+
+const X_AXIS_ANCHORS = new Set(['left', 'right', 'centerX', 'startX', 'endX']);
+const Y_AXIS_ANCHORS = new Set(['top', 'bottom', 'centerY', 'startY', 'endY']);
+
 /**
  * Parses a reference string like "#boxA.right" into { id, anchor }.
  */
@@ -41,6 +51,7 @@ export function parseRef(ref: string): { id: string; anchor: string } {
  */
 export class AnchorRegistry {
   private anchors = new Map<string, Record<string, number | Point2D>>();
+  private shapes = new Map<string, RealizedShape>();
   private _diagnostics: SolverDiagnostic[] = [];
   private _viewBox: ViewBox | null = null;
 
@@ -52,12 +63,20 @@ export class AnchorRegistry {
     return this._viewBox;
   }
 
+  get realizedShapes(): readonly RealizedShape[] {
+    return Array.from(this.shapes.values());
+  }
+
   setViewBox(vb: ViewBox): void {
     this._viewBox = vb;
   }
 
   register(id: string, values: Record<string, number | Point2D>): void {
     this.anchors.set(id, values);
+  }
+
+  registerShape(id: string, shape: RealizedShape): void {
+    this.shapes.set(id, shape);
   }
 
   addDiagnostic(level: DiagnosticLevel, shapeId: string, message: string): void {
@@ -87,6 +106,71 @@ export class AnchorRegistry {
     if (bounds.bottom > vbBottom) {
       this.addDiagnostic('warning', shapeId, `Bottom edge (${bounds.bottom}) extends beyond viewBox (maxY=${vbBottom})`);
     }
+  }
+
+  /**
+   * Check rotated bounds against the viewBox.
+   * Rotates corner points around a pivot, computes the AABB, and checks against viewBox.
+   */
+  checkRotatedBounds(
+    shapeId: string,
+    corners: Point2D[],
+    rotationDeg: number,
+    pivotX: number,
+    pivotY: number,
+  ): void {
+    const vb = this._viewBox;
+    if (!vb) return;
+
+    const rad = (rotationDeg * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+
+    const rotated = corners.map(({ x, y }) => ({
+      x: pivotX + (x - pivotX) * cos - (y - pivotY) * sin,
+      y: pivotY + (x - pivotX) * sin + (y - pivotY) * cos,
+    }));
+
+    const xs = rotated.map(p => p.x);
+    const ys = rotated.map(p => p.y);
+
+    this.checkBounds(shapeId, {
+      left: Math.min(...xs),
+      right: Math.max(...xs),
+      top: Math.min(...ys),
+      bottom: Math.max(...ys),
+    });
+  }
+
+  /**
+   * Resolve a reference with cross-axis validation.
+   * If the referenced anchor name implies a different axis than expected, pushes a warning.
+   */
+  resolveWithAxisCheck(
+    ref: string,
+    expectedAxis: 'x' | 'y',
+    forProp: string,
+    shapeId: string,
+  ): number {
+    const { anchor } = parseRef(ref);
+    const isXAnchor = X_AXIS_ANCHORS.has(anchor);
+    const isYAnchor = Y_AXIS_ANCHORS.has(anchor);
+
+    if (expectedAxis === 'x' && isYAnchor) {
+      this.addDiagnostic(
+        'warning',
+        shapeId,
+        `'${forProp}' references '${ref}' which is a y-axis anchor; did you mean a different anchor?`,
+      );
+    } else if (expectedAxis === 'y' && isXAnchor) {
+      this.addDiagnostic(
+        'warning',
+        shapeId,
+        `'${forProp}' references '${ref}' which is an x-axis anchor; did you mean a different anchor?`,
+      );
+    }
+
+    return this.resolve(ref);
   }
 
   resolve(ref: string): number {
@@ -123,6 +207,7 @@ export class AnchorRegistry {
 
   reset(): void {
     this.anchors.clear();
+    this.shapes.clear();
     this._diagnostics = [];
   }
 }
@@ -171,4 +256,12 @@ export function useSolver(): AnchorRegistry | null {
 export function useSolverDiagnostics(): readonly SolverDiagnostic[] {
   const registry = useContext(SolverContext);
   return registry?.diagnostics ?? [];
+}
+
+/**
+ * Hook to read all realized shapes. Returns an empty array if used outside a SolverProvider.
+ */
+export function useSolverShapes(): readonly RealizedShape[] {
+  const registry = useContext(SolverContext);
+  return registry?.realizedShapes ?? [];
 }

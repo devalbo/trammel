@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { useSolver } from './SolverContext';
 
 export interface Point2D {
@@ -23,7 +23,7 @@ function resolvePoint(value: Point2D | string | undefined, solver: ReturnType<ty
 }
 
 export const Line: React.FC<LineProps> = ({
-  id,
+  id: idProp,
   start: startProp,
   end: endProp,
   stroke,
@@ -31,12 +31,15 @@ export const Line: React.FC<LineProps> = ({
   rotation,
 }) => {
   const solver = useSolver();
+  const autoId = useId();
+  const id = idProp ?? autoId;
+  const isAutoId = idProp === undefined;
 
   const start = resolvePoint(startProp, solver);
   const end = resolvePoint(endProp, solver);
 
-  // Register anchors and check bounds if this shape has an id
-  if (id && solver && start && end) {
+  // Register anchors, bounds, and shape (always, not just when id is explicit)
+  if (solver && start && end) {
     const midX = (start.x + end.x) / 2;
     const midY = (start.y + end.y) / 2;
     const bounds = {
@@ -54,7 +57,23 @@ export const Line: React.FC<LineProps> = ({
       centerY: midY,
       center: { x: midX, y: midY },
     });
-    solver.checkBounds(id, bounds);
+
+    if (rotation) {
+      const corners = [
+        { x: start.x, y: start.y },
+        { x: end.x, y: end.y },
+      ];
+      solver.checkRotatedBounds(id, corners, rotation, midX, midY);
+    } else {
+      solver.checkBounds(id, bounds);
+    }
+
+    solver.registerShape(id, {
+      type: 'line',
+      id,
+      autoId: isAutoId,
+      props: { x1: start.x, y1: start.y, x2: end.x, y2: end.y, stroke, strokeWidth, rotation },
+    });
   }
 
   const cx = start && end ? (start.x + end.x) / 2 : 0;
@@ -65,7 +84,7 @@ export const Line: React.FC<LineProps> = ({
 
   return (
     <line
-      id={id}
+      id={idProp}
       x1={start?.x}
       y1={start?.y}
       x2={end?.x}

@@ -8,9 +8,9 @@
 
 
 ## Not assigned to specific story
-* if a transform rotates a shape out of viewport, I don't see a warning
+* ~~if a transform rotates a shape out of viewport, I don't see a warning~~
   - how feasible is this?
-* text editor does not support undoing text deletion
+* ~~text editor does not support undoing text deletion~~
 * if two rectangles have different rotations, should they be able to align sides?
   
 

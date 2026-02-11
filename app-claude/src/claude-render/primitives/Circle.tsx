@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { useSolver } from './SolverContext';
 
 export interface CircleProps {
@@ -20,7 +20,7 @@ function resolveScalar(value: number | string | undefined, solver: ReturnType<ty
 }
 
 export const Circle: React.FC<CircleProps> = ({
-  id,
+  id: idProp,
   centerX: centerXProp = 0,
   centerY: centerYProp = 0,
   r = 0,
@@ -30,12 +30,15 @@ export const Circle: React.FC<CircleProps> = ({
   rotation,
 }) => {
   const solver = useSolver();
+  const autoId = useId();
+  const id = idProp ?? autoId;
+  const isAutoId = idProp === undefined;
 
   const cx = resolveScalar(centerXProp, solver) ?? 0;
   const cy = resolveScalar(centerYProp, solver) ?? 0;
 
-  // Register anchors and check bounds if this shape has an id
-  if (id && solver) {
+  // Register anchors, bounds, and shape (always, not just when id is explicit)
+  if (solver) {
     const bounds = { left: cx - r, right: cx + r, top: cy - r, bottom: cy + r };
     solver.register(id, {
       centerX: cx,
@@ -43,7 +46,15 @@ export const Circle: React.FC<CircleProps> = ({
       ...bounds,
       center: { x: cx, y: cy },
     });
+    // Rotation around center doesn't change bounds for a circle
     solver.checkBounds(id, bounds);
+
+    solver.registerShape(id, {
+      type: 'circle',
+      id,
+      autoId: isAutoId,
+      props: { cx, cy, r, fill, stroke, strokeWidth, rotation },
+    });
   }
 
   const transform = rotation
@@ -52,7 +63,7 @@ export const Circle: React.FC<CircleProps> = ({
 
   return (
     <circle
-      id={id}
+      id={idProp}
       cx={cx}
       cy={cy}
       r={r}
