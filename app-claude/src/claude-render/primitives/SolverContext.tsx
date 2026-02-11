@@ -42,6 +42,36 @@ export function parseRef(ref: string): { id: string; anchor: string } {
 }
 
 /**
+ * Parses a reference expression like "#a.right + 10" into { id, anchor, op?, operand? }.
+ * Supports +, -, *, / with a numeric operand.
+ */
+export function parseRefExpr(expr: string): { id: string; anchor: string; op?: string; operand?: number } {
+  const match = expr.match(/^#([^.]+)\.(\w+)(?:\s*([+\-*/])\s*(\d+(?:\.\d+)?))?$/);
+  if (!match) {
+    throw new Error(`Invalid anchor expression: "${expr}". Expected format "#id.anchor" or "#id.anchor + N".`);
+  }
+  const result: { id: string; anchor: string; op?: string; operand?: number } = {
+    id: match[1],
+    anchor: match[2],
+  };
+  if (match[3] && match[4]) {
+    result.op = match[3];
+    result.operand = parseFloat(match[4]);
+  }
+  return result;
+}
+
+function applyOp(value: number, op: string, operand: number): number {
+  switch (op) {
+    case '+': return value + operand;
+    case '-': return value - operand;
+    case '*': return value * operand;
+    case '/': return value / operand;
+    default: return value;
+  }
+}
+
+/**
  * Synchronous registry that stores anchor values for shapes.
  * Shapes register anchors as they render (top-to-bottom in JSX order),
  * so later shapes can resolve references to earlier shapes.
@@ -152,7 +182,7 @@ export class AnchorRegistry {
     forProp: string,
     shapeId: string,
   ): number {
-    const { anchor } = parseRef(ref);
+    const { anchor } = parseRefExpr(ref);
     const isXAnchor = X_AXIS_ANCHORS.has(anchor);
     const isYAnchor = Y_AXIS_ANCHORS.has(anchor);
 
@@ -174,7 +204,7 @@ export class AnchorRegistry {
   }
 
   resolve(ref: string): number {
-    const { id, anchor } = parseRef(ref);
+    const { id, anchor, op, operand } = parseRefExpr(ref);
     const shapeAnchors = this.anchors.get(id);
     if (!shapeAnchors) {
       throw new Error(`Anchor reference "#${id}.${anchor}": shape "${id}" not found. Is it defined before this shape?`);
@@ -185,6 +215,9 @@ export class AnchorRegistry {
     }
     if (typeof value !== 'number') {
       throw new Error(`Anchor reference "#${id}.${anchor}" resolved to a point, not a number. Use resolvePoint() for point anchors.`);
+    }
+    if (op !== undefined && operand !== undefined) {
+      return applyOp(value, op, operand);
     }
     return value;
   }
