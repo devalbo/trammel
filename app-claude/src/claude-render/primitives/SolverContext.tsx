@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useRef } from 'react';
+import { parseExpr, parseAndEvaluate, collectAnchors } from './ExprParser';
 
 export interface Point2D {
   x: number;
@@ -41,35 +42,6 @@ export function parseRef(ref: string): { id: string; anchor: string } {
   return { id: match[1], anchor: match[2] };
 }
 
-/**
- * Parses a reference expression like "#a.right + 10" into { id, anchor, op?, operand? }.
- * Supports +, -, *, / with a numeric operand.
- */
-export function parseRefExpr(expr: string): { id: string; anchor: string; op?: string; operand?: number } {
-  const match = expr.match(/^#([^.]+)\.(\w+)(?:\s*([+\-*/])\s*(\d+(?:\.\d+)?))?$/);
-  if (!match) {
-    throw new Error(`Invalid anchor expression: "${expr}". Expected format "#id.anchor" or "#id.anchor + N".`);
-  }
-  const result: { id: string; anchor: string; op?: string; operand?: number } = {
-    id: match[1],
-    anchor: match[2],
-  };
-  if (match[3] && match[4]) {
-    result.op = match[3];
-    result.operand = parseFloat(match[4]);
-  }
-  return result;
-}
-
-function applyOp(value: number, op: string, operand: number): number {
-  switch (op) {
-    case '+': return value + operand;
-    case '-': return value - operand;
-    case '*': return value * operand;
-    case '/': return value / operand;
-    default: return value;
-  }
-}
 
 /**
  * Synchronous registry that stores anchor values for shapes.
@@ -181,45 +153,54 @@ export class AnchorRegistry {
     expectedAxis: 'x' | 'y',
     forProp: string,
     shapeId: string,
+    selfId?: string,
   ): number {
-    const { anchor } = parseRefExpr(ref);
-    const isXAnchor = X_AXIS_ANCHORS.has(anchor);
-    const isYAnchor = Y_AXIS_ANCHORS.has(anchor);
+    const ast = parseExpr(ref);
+    const anchors = collectAnchors(ast);
 
-    if (expectedAxis === 'x' && isYAnchor) {
-      this.addDiagnostic(
-        'warning',
-        shapeId,
-        `'${forProp}' references '${ref}' which is a y-axis anchor; did you mean a different anchor?`,
-      );
-    } else if (expectedAxis === 'y' && isXAnchor) {
-      this.addDiagnostic(
-        'warning',
-        shapeId,
-        `'${forProp}' references '${ref}' which is an x-axis anchor; did you mean a different anchor?`,
-      );
+    for (const anchor of anchors) {
+      const isXAnchor = X_AXIS_ANCHORS.has(anchor);
+      const isYAnchor = Y_AXIS_ANCHORS.has(anchor);
+
+      if (expectedAxis === 'x' && isYAnchor) {
+        this.addDiagnostic(
+          'warning',
+          shapeId,
+          `'${forProp}' references '${ref}' which is a y-axis anchor; did you mean a different anchor?`,
+        );
+      } else if (expectedAxis === 'y' && isXAnchor) {
+        this.addDiagnostic(
+          'warning',
+          shapeId,
+          `'${forProp}' references '${ref}' which is an x-axis anchor; did you mean a different anchor?`,
+        );
+      }
     }
 
-    return this.resolve(ref);
+    return this.resolve(ref, selfId);
   }
 
-  resolve(ref: string): number {
-    const { id, anchor, op, operand } = parseRefExpr(ref);
-    const shapeAnchors = this.anchors.get(id);
-    if (!shapeAnchors) {
-      throw new Error(`Anchor reference "#${id}.${anchor}": shape "${id}" not found. Is it defined before this shape?`);
-    }
-    const value = shapeAnchors[anchor];
-    if (value === undefined) {
-      throw new Error(`Anchor reference "#${id}.${anchor}": anchor "${anchor}" not found on shape "${id}".`);
-    }
-    if (typeof value !== 'number') {
-      throw new Error(`Anchor reference "#${id}.${anchor}" resolved to a point, not a number. Use resolvePoint() for point anchors.`);
-    }
-    if (op !== undefined && operand !== undefined) {
-      return applyOp(value, op, operand);
-    }
-    return value;
+  resolve(ref: string, selfId?: string): number {
+    const lookup = (rawId: string, anchor: string): number => {
+      const id = rawId === '$self' ? selfId : rawId;
+      if (!id) {
+        throw new Error(`"$self" used in "${ref}" but no shape ID context available.`);
+      }
+      const shapeAnchors = this.anchors.get(id);
+      if (!shapeAnchors) {
+        throw new Error(`Anchor reference "#${id}.${anchor}": shape "${id}" not found. Is it defined before this shape?`);
+      }
+      const value = shapeAnchors[anchor];
+      if (value === undefined) {
+        throw new Error(`Anchor reference "#${id}.${anchor}": anchor "${anchor}" not found on shape "${id}".`);
+      }
+      if (typeof value !== 'number') {
+        throw new Error(`Anchor reference "#${id}.${anchor}" resolved to a point, not a number. Use resolvePoint() for point anchors.`);
+      }
+      return value;
+    };
+
+    return parseAndEvaluate(ref, lookup);
   }
 
   resolvePoint(ref: string): Point2D {

@@ -21,11 +21,15 @@ export interface RectProps {
   centerY?: number | string;
 }
 
-function resolveScalar(value: number | string | undefined, solver: ReturnType<typeof useSolver>): number | undefined {
+function resolveScalar(
+  value: number | string | undefined,
+  solver: ReturnType<typeof useSolver>,
+  selfId?: string,
+): number | undefined {
   if (value === undefined) return undefined;
   if (typeof value === 'number') return value;
   if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
-  return solver.resolve(value);
+  return solver.resolve(value, selfId);
 }
 
 function resolveScalarWithAxisCheck(
@@ -38,7 +42,7 @@ function resolveScalarWithAxisCheck(
   if (value === undefined) return undefined;
   if (typeof value === 'number') return value;
   if (!solver) throw new Error(`Cannot resolve reference "${value}": no SolverProvider found.`);
-  return solver.resolveWithAxisCheck(value, expectedAxis, forProp, shapeId);
+  return solver.resolveWithAxisCheck(value, expectedAxis, forProp, shapeId, shapeId);
 }
 
 export const Rect: React.FC<RectProps> = ({
@@ -101,9 +105,12 @@ export const Rect: React.FC<RectProps> = ({
     }
   }
 
-  // Resolve width/height (may be reference strings)
-  const width = resolveScalar(widthProp, solver) ?? 0;
-  const height = resolveScalar(heightProp, solver) ?? 0;
+  // Resolve width first, register it early so $self.width works for height
+  const width = resolveScalar(widthProp, solver, id) ?? 0;
+  if (solver) {
+    solver.register(id, { width });
+  }
+  const height = resolveScalar(heightProp, solver, id) ?? 0;
 
   // Resolve virtual props (with cross-axis validation for string references)
   const left = resolveScalarWithAxisCheck(leftProp, solver, 'x', 'left', id);
